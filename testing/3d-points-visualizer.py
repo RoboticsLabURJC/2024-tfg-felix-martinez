@@ -1,28 +1,29 @@
 import numpy as np
 import plotly.graph_objects as go
+import plotly.io as pio
 
-num_points = 10
-points_range = 20
+# Puedes probar diferentes renderizadores según tu entorno
+# pio.renderers.default = 'notebook'  # Intenta con 'inline' si estás en Jupyter
 
-# Función que crea pundos LiDAR simulados
+num_points = 100
+points_range = 50
+
+# Función que crea puntos LiDAR simulados
 def create_point(): 
-    # Creación de componentes espaciales y de color
     x = np.random.rand() * points_range - points_range/2
     y = np.random.rand() * points_range - points_range/2
     z = np.random.rand() * points_range - points_range/2
     r = int(round(np.random.rand() * 255))
     g = int(round(np.random.rand() * 255))
     b = int(round(np.random.rand() * 255))
-    # Creación del array
     point = np.array([x, y, z, r, g, b])
-
     return point
 
 # Función para convertir RGB a formato hexadecimal
 def rgb_to_hex(r, g, b):
-    # Conviertir valores RGB (0-255) a un color en formato hexadecimal del formato #FFFFFF
+    # Asegurarse de que los valores r, g, b sean enteros
+    r, g, b = int(r), int(g), int(b)
     return f'#{r:02x}{g:02x}{b:02x}'
-
 
 # Función que crea una nube de puntos aleatorios
 def create_array(n):
@@ -31,15 +32,12 @@ def create_array(n):
         point = create_point()
         points.append(point)
     lidar_array = np.array(points)
-
     return lidar_array
 
 data = create_array(num_points)
 
 # Función que genera un gráfico 3D con Plotly
 def plot_lidar_data(data):
-    # Genera un gráfico 3D interactivo usando Plotly a partir de un array de puntos
-    # Extraer coordenadas x, y, z del array y las componentes de color R, G, B
     x_vals = data[:, 0]
     y_vals = data[:, 1]
     z_vals = data[:, 2]
@@ -47,24 +45,20 @@ def plot_lidar_data(data):
     g_vals = data[:, 4]
     b_vals = data[:, 5]
 
-    # Aplicamos la transformación a hexadecimal y creamos una lista 'colors' que tendra la componente #FFFFFF de cada punto
     colors = [rgb_to_hex(r, g, b) for r, g, b in zip(r_vals, g_vals, b_vals)]
 
-    # Crear el gráfico 3D
     fig = go.Figure(data=[go.Scatter3d(
-        x = x_vals,
-        y = y_vals,
-        z = z_vals,
-        mode = 'markers',
-        marker = dict(
-            size = 3,
-            color = colors,           
-            colorscale = 'Viridis',       # Escala de colores
-            opacity = 0.8
+        x=x_vals,
+        y=y_vals,
+        z=z_vals,
+        mode='markers',
+        marker=dict(
+            size=3,
+            color=colors,
+            opacity=0.8
         )
     )])
     
-    # Etiquetar los ejes
     fig.update_layout(
         scene=dict(
             xaxis_title='Eje X',
@@ -75,6 +69,7 @@ def plot_lidar_data(data):
     )
     
     # Mostrar el gráfico
-    fig.write_html("grafico.html")
     fig.show()
-    
+
+# Llamar a la función para generar el gráfico
+plot_lidar_data(data)

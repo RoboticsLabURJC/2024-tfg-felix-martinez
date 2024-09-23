@@ -5,8 +5,8 @@ import plotly.io as pio
 # Puedes probar diferentes renderizadores según tu entorno
 # pio.renderers.default = 'notebook'  # Intenta con 'inline' si estás en Jupyter
 
-num_points = 100
-points_range = 50
+num_points = 500
+points_range = 100
 
 # Función que crea puntos LiDAR simulados
 def create_point(): 
@@ -47,6 +47,9 @@ def plot_lidar_data(data):
 
     colors = [rgb_to_hex(r, g, b) for r, g, b in zip(r_vals, g_vals, b_vals)]
 
+    # Crear las etiquetas de texto para mostrar los valores RGB
+    text_vals = [f'RGB: ({r}, {g}, {b})' for r, g, b in zip(r_vals, g_vals, b_vals)]
+
     fig = go.Figure(data=[go.Scatter3d(
         x=x_vals,
         y=y_vals,
@@ -56,14 +59,15 @@ def plot_lidar_data(data):
             size=3,
             color=colors,
             opacity=0.8
-        )
+        ),
+        text=text_vals,  # Mostrar las componentes RGB en los tooltips
     )])
     
     fig.update_layout(
         scene=dict(
             xaxis_title='Eje X',
             yaxis_title='Eje Y',
-            zaxis_title='Eje Z'
+            zaxis_title='Eje Z',
         ),
         title="Gráfico 3D de puntos"
     )

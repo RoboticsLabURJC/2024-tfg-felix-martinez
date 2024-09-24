@@ -72,6 +72,32 @@ def plot_lidar_data(data):
         title="Gráfico 3D de puntos"
     )
     
+    fig.update_layout(
+        scene=dict(
+            xaxis=dict(
+                showline=True,   # Mostrar línea del eje X
+                zeroline=True,   # Mostrar línea del eje en el valor 0
+                showgrid=False,  # No mostrar la cuadrícula
+                zerolinecolor='black',  # Color de la línea en el valor 0
+                zerolinewidth=2  # Grosor de la línea en el valor 0
+            ),
+            yaxis=dict(
+                showline=True,   # Mostrar línea del eje Y
+                zeroline=True,   # Mostrar línea del eje en el valor 0
+                showgrid=False,  # No mostrar la cuadrícula
+                zerolinecolor='black',  # Color de la línea en el valor 0
+                zerolinewidth=2  # Grosor de la línea en el valor 0
+            ),
+            zaxis=dict(
+                showline=True,   # Mostrar línea del eje Z
+                zeroline=True,   # Mostrar línea del eje en el valor 0
+                showgrid=False,  # No mostrar la cuadrícula
+                zerolinecolor='black',  # Color de la línea en el valor 0
+                zerolinewidth=2  # Grosor de la línea en el valor 0
+            )
+        )
+    )
+
     # Mostrar el gráfico
     fig.show()
 

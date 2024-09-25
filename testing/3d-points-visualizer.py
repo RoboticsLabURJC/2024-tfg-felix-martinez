@@ -56,7 +56,7 @@ def plot_lidar_data(data):
         z=z_vals,
         mode='markers',
         marker=dict(
-            size=3,
+            size=1.5,
             color=colors,
             opacity=0.8
         ),

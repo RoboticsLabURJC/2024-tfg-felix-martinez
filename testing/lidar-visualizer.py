@@ -62,7 +62,7 @@ class LidarVisualizer(LidarDataReader):
             z=z_vals,
             mode='markers',
             marker=dict(
-                size=0.5,
+                size=1,
                 color=colors,
                 opacity=0.8
             ),

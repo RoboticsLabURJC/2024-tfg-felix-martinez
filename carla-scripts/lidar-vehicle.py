@@ -1,4 +1,5 @@
 import carla
+import pygame
 
 # --------------- Conectar al Servidor principal ------------------ #
 
@@ -22,6 +23,9 @@ spawn_point = world.get_map().get_spawn_points()[0]
 
 # Spawnear el objeto de Tipo: Actor_Vehiculo (Se crea un nuevo objeto al generarlo)
 vehicle = world.spawn_actor(vehicle_00, spawn_point)
+
+# Activar el modo de conducción automática por defecto que odrece carla con el metodo set_autopilot(True)
+vehicle.set_autopilot(True)
 
 # ---------------- Agregar un ACTOR Sensor LiDAR y configurar sus atributos -------------------- #
 
@@ -54,6 +58,7 @@ def lidar_callback(point_cloud):
 # "Todos los Actores de Tipo Sensor tienen el método listen() para obtener la información"
 lidar.listen(lidar_callback)
 
+# -------------------- Logica de lanzamiento ----------------- # 
 try:
     # Mantener el script corriendo
     while True:

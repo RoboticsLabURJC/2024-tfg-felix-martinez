@@ -1,6 +1,6 @@
 import numpy as np
 import plotly.graph_objects as go
-import matplotlib.cm as cm  # Importamos el módulo de colormap de matplotlib
+import matplotlib.cm as cm
 
 # Clase base para la lectura de datos LiDAR del dataset GOOSE
 class LidarDataReader:
@@ -28,7 +28,7 @@ class LidarVisualizer(LidarDataReader):
 
     # Función que convierte intensidad a color en formato hexadecimal
     def intensity_to_color(self, intensity):
-        # Normalizamos la intensidad (suponiendo que la intensidad está entre 0 y 255)
+        # Normalizamos la intensidad
         intensity_normalized = (intensity - intensity.min()) / (intensity.max() - intensity.min())
         # Usamos una colormap de matplotlib (ahora correcto)
         colormap = cm.get_cmap('plasma')
@@ -62,7 +62,7 @@ class LidarVisualizer(LidarDataReader):
             z=z_vals,
             mode='markers',
             marker=dict(
-                size=1,
+                size=0.8,
                 color=colors,
                 opacity=0.8
             ),
@@ -110,8 +110,7 @@ class LidarVisualizer(LidarDataReader):
         fig.show()
 
 # Especifica la ruta del archivo .bin del GOOSE dataset
-file_path = "/home/felix/Escritorio/TFG/datasets/Goose/goose_3d_val/lidar/val/2022-07-22_flight/2022-07-22_flight__0217_1658494689022594657_vls128.bin"
-
+file_path = "/home/felix/Escritorio/TFG/datasets/Goose/goose_3d_val/lidar/val/2022-07-22_flight/2022-07-22_flight__0195_1658494596120446131_vls128.bin"
 # Crear una instancia de la clase LidarVisualizer y generar la visualización
 visualizer = LidarVisualizer(file_path)
 visualizer.plot_lidar_data()

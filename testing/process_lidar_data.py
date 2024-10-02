@@ -24,7 +24,7 @@ def process_lidar_file(file_path):
     # Aquí puedes realizar más operaciones con los puntos e intensidades
 
 # Ruta al archivo .bin que deseas procesar (cámbiala según tu ubicación)
-file_path = "/home/felix/Escritorio/TFG/datasets/Goose/goose_3d_val/lidar/val/2022-07-22_flight/2022-07-22_flight__0217_1658494689022594657_vls128.bin"
+file_path = "/home/felix/Escritorio/TFG/datasets/Goose/goose_3d_val/lidar/val/2022-07-22_flight/2022-07-22_flight__0195_1658494596120446131_vls128.bin"
 
 
 # Llamada para procesar el archivo

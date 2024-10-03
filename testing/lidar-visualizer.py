@@ -30,10 +30,10 @@ class LidarVisualizer(LidarDataReader):
     def intensity_to_color(self, intensity):
         # Normalizamos la intensidad
         intensity_normalized = (intensity - intensity.min()) / (intensity.max() - intensity.min())
-        # Usamos una colormap de matplotlib (ahora correcto)
-        colormap = cm.get_cmap('plasma')
+        # Usamos una colormap de matplotlib para visualizar las intensidades
+        colormap = cm.get_cmap('plasma') 
         rgba_colors = colormap(intensity_normalized)
-        # Convertimos los valores rgba a hex
+        # Convertimos los valores rgba a hex para poder mostrarlos con Plotly
         hex_colors = [f'#{int(r*255):02x}{int(g*255):02x}{int(b*255):02x}' for r, g, b, _ in rgba_colors]
         return hex_colors
 

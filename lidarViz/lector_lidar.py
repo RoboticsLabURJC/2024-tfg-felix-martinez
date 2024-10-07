@@ -11,7 +11,7 @@ def leer_archivo_bin(filename):
     scan = scan.reshape((-1, 4))
     points = scan[:, 0:3]    # Coordenadas XYZ
     remissions = scan[:, 3]  # Intensidades de remisión
-    return points[::5], remissions[::5] # Muestreo 1/5 para aunmentar rendimiento
+    return points[::8], remissions[::8] # Muestreo 1/5 para aunmentar rendimiento
 
 # Función asincrónica para leer el archivo de forma asíncrona usando asyncio.to_thread
 async def leer_archivo_bin_async(filename):

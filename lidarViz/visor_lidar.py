@@ -67,6 +67,9 @@ def actualizar_grafico(n_clicks_siguiente, n_clicks_atras, index_actual):
     elif n_clicks_atras > n_clicks_siguiente and index_actual > 0:
         index_actual -= 1
 
+    # Evitar valores negativos o mayores que el número de archivos
+    index_actual = max(0, min(index_actual, max_index))
+
     # Obtener los puntos y remisiones para el índice actual
     points, remissions = datos_lidar[index_actual]
 
@@ -88,6 +91,7 @@ def actualizar_grafico(n_clicks_siguiente, n_clicks_atras, index_actual):
 
     # Devolver el gráfico, el texto actualizado y el nuevo índice
     return fig, output_text, index_actual
+
 
 # Función para iniciar el visor Dash con los datos LiDAR
 def iniciar_visor(datos_lidar_procesados):

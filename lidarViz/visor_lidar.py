@@ -28,12 +28,13 @@ app.layout = html.Div([
     dcc.Store(id='index-datos', data=0)
 ])
 
-# Preprocesa los datos LiDAR y prepara los objetos gráficos para optimizar la renderización
 def generar_scatter_3d(points, remissions):
     """
     Genera una traza 3D para la visualización de los datos LiDAR usando go.Scatter3d.
+    Además, agrega un scatter estático que representa la posición del sensor LiDAR.
     """
-    return go.Scatter3d(
+    # Traza principal de los puntos LiDAR
+    scatter_lidar = go.Scatter3d(
         x=points[:, 0],
         y=points[:, 1],
         z=points[:, 2],
@@ -43,10 +44,28 @@ def generar_scatter_3d(points, remissions):
             color=remissions,  # Color basado en las remisiones
             colorscale='Viridis',
             opacity=0.8
-        )
+        ),
+        name="LiDAR Points"  # Nombre de la traza
     )
 
-# Callback para actualizar el gráfico según el índice de archivo seleccionado
+    # Traza estática que representa la posición del sensor LiDAR en (0, 0, 0) con color rojo y tamaño 2
+    scatter_sensor = go.Scatter3d(
+        x=[0],  # Posición en X
+        y=[0],  # Posición en Y
+        z=[0],  # Posición en Z
+        mode='markers',
+        marker=dict(
+            size=4,  # Tamaño de la marca
+            color='red',  # Color rojo
+            opacity=1  # Completamente opaco
+        ),
+        name="Posición del Sensor"  # Nombre de la traza
+    )
+
+    # Retornar ambas trazas en una lista
+    return [scatter_lidar, scatter_sensor]
+
+
 @app.callback(
     [Output('graph-lidar', 'figure'),
      Output('output-container', 'children'),
@@ -75,8 +94,8 @@ def actualizar_grafico(n_clicks_siguiente, n_clicks_atras, index_actual):
     # Obtener los puntos, remisiones y nombre del archivo para el índice actual
     (points, remissions), nombre_archivo = datos_lidar[index_actual]
 
-    # Crear la figura con go.Scatter3d
-    fig = go.Figure(data=[generar_scatter_3d(points, remissions)])
+    # Crear la figura con las trazas (LiDAR y posición del sensor)
+    fig = go.Figure(data=generar_scatter_3d(points, remissions))
 
     # Ajustar el layout de la escena (zoom, ejes)
     fig.update_layout(
@@ -93,6 +112,7 @@ def actualizar_grafico(n_clicks_siguiente, n_clicks_atras, index_actual):
 
     # Devolver el gráfico, el texto actualizado y el nuevo índice
     return fig, output_text, index_actual
+
 
 # Función para iniciar el visor Dash con los datos LiDAR
 def iniciar_visor(datos_lidar_procesados):

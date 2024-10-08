@@ -4,7 +4,7 @@ from visor_lidar import iniciar_visor
 
 async def main():
     # Carpeta que contiene los archivos LiDAR
-    carpeta_lidar = '/home/felix/Escritorio/TFG/datasets/Goose/goose_3d_val/lidar/val/2022-07-22_flight/'
+    carpeta_lidar = '/home/felix/Escritorio/TFG/datasets/Goose/goose_3d_val/lidar/val/2023-05-17_neubiberg_sunny/'
     
     # Leer todos los archivos LiDAR de forma asíncrona
     print("Leyendo archivos LiDAR...")

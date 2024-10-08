@@ -61,17 +61,19 @@ def actualizar_grafico(n_clicks_siguiente, n_clicks_atras, index_actual):
     """
     max_index = len(datos_lidar) - 1  # Último índice de los datos disponibles
 
-    # Determinar el nuevo índice basado en los clics de los botones
-    if n_clicks_siguiente > n_clicks_atras and index_actual < max_index:
+    # Determinar la dirección del cambio según los clics
+    cambio = n_clicks_siguiente - n_clicks_atras
+
+    if cambio > 0 and index_actual < max_index:
         index_actual += 1
-    elif n_clicks_atras > n_clicks_siguiente and index_actual > 0:
+    elif cambio < 0 and index_actual > 0:
         index_actual -= 1
 
     # Evitar valores negativos o mayores que el número de archivos
     index_actual = max(0, min(index_actual, max_index))
 
-    # Obtener los puntos y remisiones para el índice actual
-    points, remissions = datos_lidar[index_actual]
+    # Obtener los puntos, remisiones y nombre del archivo para el índice actual
+    (points, remissions), nombre_archivo = datos_lidar[index_actual]
 
     # Crear la figura con go.Scatter3d
     fig = go.Figure(data=[generar_scatter_3d(points, remissions)])
@@ -83,15 +85,14 @@ def actualizar_grafico(n_clicks_siguiente, n_clicks_atras, index_actual):
             yaxis=dict(range=[points[:, 1].min() - 10, points[:, 1].max() + 10]),
             zaxis=dict(range=[points[:, 2].min() - 10, points[:, 2].max() + 10])
         ),
-        title=f"Nube de Puntos - Archivo {index_actual + 1}"
+        title=f"Nube de Puntos - {nombre_archivo}"
     )
 
-    # Actualizar el texto que muestra el índice del archivo actual
-    output_text = f"Visualizando el archivo {index_actual + 1} de {len(datos_lidar)}"
+    # Actualizar el texto que muestra el nombre del archivo actual
+    output_text = f"Visualizando el archivo: {nombre_archivo}"
 
     # Devolver el gráfico, el texto actualizado y el nuevo índice
     return fig, output_text, index_actual
-
 
 # Función para iniciar el visor Dash con los datos LiDAR
 def iniciar_visor(datos_lidar_procesados):

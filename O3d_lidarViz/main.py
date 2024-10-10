@@ -1,32 +1,54 @@
 import open3d as o3d
 import numpy as np
 import asyncio
+import matplotlib.pyplot as plt
 from lector_lidar import leer_archivos_lidar
 
 # Carpeta de los archivos LiDAR
-carpeta_lidar = '/home/felix/Escritorio/TFG/datasets/Goose/goose_3d_val/lidar/val/2023-05-17_neubiberg_sunny/'
+carpeta_lidar = '/Users/felixmaral/Desktop/TFG/datasets/goose_3d_val/lidar/val/2022-12-07_aying_hills'
 
-# Función para mostrar una nube de puntos en Open3D
-def visualizar_nube_puntos(puntos, vis):
-    # Actualizar la nube de puntos en la visualización
+# Función para visualizar una nube de puntos en Open3D con un mapa de colores basado en remisiones
+def visualizar_nube_puntos(puntos, remisiones, vis):
+    # Verificar si la nube de puntos está vacía
+    if len(puntos) == 0:
+        print("[Advertencia] La nube de puntos está vacía, omitiendo visualización.")
+        return
+
+    # Crear la nube de puntos si tiene datos
     nube_puntos = o3d.geometry.PointCloud()
     nube_puntos.points = o3d.utility.Vector3dVector(puntos)
+
+    # Normalizar las remisiones a un rango de 0 a 1
+    remisiones_normalizadas = np.asarray(remisiones)
+    remisiones_normalizadas = (remisiones_normalizadas - remisiones_normalizadas.min()) / (remisiones_normalizadas.max() - remisiones_normalizadas.min())
+
+    # Crear un mapa de color lineal usando matplotlib (por ejemplo, 'jet' o cualquier otro mapa)
+    cmap = plt.get_cmap('jet')  # Puedes cambiar a cualquier otro mapa de colores de matplotlib
+    colores = cmap(remisiones_normalizadas)[:, :3]  # Obtener solo RGB, sin el canal alfa
+
+    # Asignar los colores a la nube de puntos
+    nube_puntos.colors = o3d.utility.Vector3dVector(colores)
 
     # Limpiar geometrías previas
     vis.clear_geometries()
 
-    # Añadir la nube de puntos
+    # Añadir la nueva nube de puntos
     vis.add_geometry(nube_puntos)
 
     # Añadir la posición del sensor como una esfera roja en el origen
     sensor_pos = o3d.geometry.TriangleMesh.create_sphere(radius=0.5)  # Tamaño de la esfera
     sensor_pos.translate([0, 0, 0])  # Posición del sensor en el origen
-    sensor_pos.paint_uniform_color([1, 0, 0])  # Color rojo
+    sensor_pos.paint_uniform_color([1, 0, 0])  # Color rojo para el sensor
     vis.add_geometry(sensor_pos)
 
     # Actualizar la visualización
     vis.update_renderer()
     vis.poll_events()
+
+# Función para actualizar la nube de puntos sin restaurar la cámara
+def actualizar_nube_de_puntos(vis, puntos, remisiones):
+    # Actualizar la nube de puntos sin intentar restaurar el estado de la cámara
+    visualizar_nube_puntos(puntos, remisiones, vis)
 
 # Función principal
 async def main():
@@ -35,24 +57,16 @@ async def main():
 
     # Crear una ventana de visualización Open3D
     vis = o3d.visualization.VisualizerWithKeyCallback()
-    vis.create_window()
+    vis.create_window()  # Sin fijar el tamaño de la ventana
 
     # Crear una geometría de nube de puntos vacía
     nube_puntos = o3d.geometry.PointCloud()
     vis.add_geometry(nube_puntos)
 
-    # Obtener el control de la cámara (view control)
-    ctr = vis.get_view_control()
-    
-    # Configuración de la cámara
-    ctr.set_lookat([0, 0, 0])  # Apuntar al origen
-    ctr.set_front([0, 0, -1])  # Dirección de la cámara (hacia el eje -Z)
-    ctr.set_up([0, -1, 0])     # Dirección hacia arriba (eje Y negativo)
-    ctr.set_zoom(5)          # Aumentar el zoom (más cercano a la escena)
-
-    # Obtener las opciones de renderizado para reducir el tamaño de los puntos
+    # Obtener las opciones de renderizado para ajustar el tamaño de los puntos
     render_options = vis.get_render_option()
-    render_options.point_size = 1.5  # Tamaño pequeño para los puntos del scatter plot
+    render_options.point_size = 1.5  # Tamaño pequeño para los puntos
+    render_options.light_on = False  # Desactivar la iluminación (útil para nubes de puntos)
 
     # Índice actual y máximo
     index_actual = [0]  # Usamos una lista mutable para poder modificarlo dentro de los callbacks
@@ -60,14 +74,14 @@ async def main():
 
     # Mostrar la primera nube de puntos
     puntos, remisiones = datos_lidar[index_actual[0]]
-    visualizar_nube_puntos(puntos, vis)
+    visualizar_nube_puntos(puntos, remisiones, vis)
 
     # Callback para avanzar (tecla flecha derecha)
     def avanzar(vis):
         if index_actual[0] < max_index:
             index_actual[0] += 1
             puntos, remisiones = datos_lidar[index_actual[0]]
-            visualizar_nube_puntos(puntos, vis)
+            actualizar_nube_de_puntos(vis, puntos, remisiones)
             print(f"Mostrando archivo {index_actual[0] + 1}/{max_index + 1}")
         return False
 
@@ -76,7 +90,7 @@ async def main():
         if index_actual[0] > 0:
             index_actual[0] -= 1
             puntos, remisiones = datos_lidar[index_actual[0]]
-            visualizar_nube_puntos(puntos, vis)
+            actualizar_nube_de_puntos(vis, puntos, remisiones)
             print(f"Mostrando archivo {index_actual[0] + 1}/{max_index + 1}")
         return False
 

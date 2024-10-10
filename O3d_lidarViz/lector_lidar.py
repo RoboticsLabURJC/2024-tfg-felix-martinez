@@ -41,3 +41,4 @@ async def leer_archivos_lidar(carpeta):
         tareas.append(leer_archivo_bin(ruta_completa))
     
     return tareas  # Retorna la lista de tuplas (puntos, remisiones)
+    

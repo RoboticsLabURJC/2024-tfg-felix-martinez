@@ -18,7 +18,7 @@ email: felixmaral131@gmail.com
 description: Documentación sobre el desarrollo de Trabajo de Fin de Grado
 #twitter_username: username
 github_username: felixmaral
-minimal_mistakes_skin: light
+minimal_mistakes_skin: dark
 search: true
 
 # Build settings

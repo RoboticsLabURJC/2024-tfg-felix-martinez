@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from lector_lidar import leer_archivos_lidar
 
 # Carpeta de los archivos LiDAR
-carpeta_lidar = '/Users/felixmaral/Desktop/TFG/datasets/goose_3d_val/lidar/val/2022-12-07_aying_hills'
+carpeta_lidar = '/home/felix/Escritorio/TFG/datasets/Goose/goose_3d_val/lidar/val/2023-05-17_neubiberg_sunny/'
 
 # Función para visualizar una nube de puntos en Open3D con un mapa de colores basado en remisiones
 def visualizar_nube_puntos(puntos, remisiones, vis):
@@ -40,6 +40,13 @@ def visualizar_nube_puntos(puntos, remisiones, vis):
     sensor_pos.translate([0, 0, 0])  # Posición del sensor en el origen
     sensor_pos.paint_uniform_color([1, 0, 0])  # Color rojo para el sensor
     vis.add_geometry(sensor_pos)
+
+    # Configurar la cámara para vista de planta y zoom
+    ctr = vis.get_view_control()
+    ctr.set_zoom(0.2)  # Ajustar el zoom (reduce el valor para acercar la cámara)
+    ctr.set_front([0, 0, 1])  # Vista desde arriba (planta)
+    ctr.set_lookat([0, 0, 0])  # El punto de interés (centro de la escena)
+    ctr.set_up([0, -1, 0])  # Definir el eje "arriba" para la cámara (invertido para vista de planta)
 
     # Actualizar la visualización
     vis.update_renderer()

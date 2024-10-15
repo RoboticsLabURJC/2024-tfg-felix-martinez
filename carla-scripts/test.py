@@ -30,32 +30,29 @@ def lidar_callback(lidar_data, point_cloud):
     point_cloud.points = o3d.utility.Vector3dVector(data[:, :-1])
     point_cloud.colors = o3d.utility.Vector3dVector(int_color)
 
-def spawn_vehicle_lidar(world, bp):
-    vehicle_00 = bp.filter('vehicle.*')[0]
+def spawn_vehicle_lidar(world, bp, traffic_manager, delta):
+    vehicle_bp = bp.filter('vehicle.*')[0]
     spawn_points = world.get_map().get_spawn_points()
 
-    spawn = False
-    while True:
-        if not spawn:
-            spawn_point = random.choice(spawn_points)
-            if not spawn_point:
-                pass
-            else:
-                break
+    # Elegir un punto de spawn aleatorio
+    spawn_point = random.choice(spawn_points)
 
-    vehicle = world.spawn_actor(vehicle_00, spawn_point)
-    vehicle.set_autopilot(True)
+    # Crear el vehículo en el punto aleatorio
+    vehicle = world.spawn_actor(vehicle_bp, spawn_point)
 
     lidar_bp = bp.find('sensor.lidar.ray_cast')
 
     lidar_bp.set_attribute('range', '100')
-    lidar_bp.set_attribute('rotation_frequency', '60')
+    lidar_bp.set_attribute('rotation_frequency', str(1 / delta))
     lidar_bp.set_attribute('channels', '64')
     lidar_bp.set_attribute('points_per_second', '500000')
 
     lidar_position = carla.Transform(carla.Location(x=-0.5, z=1.8))
     lidar = world.spawn_actor(lidar_bp, lidar_position, attach_to=vehicle)
-    
+
+    # Conectar el vehículo al Traffic Manager y activar el autopiloto
+    vehicle.set_autopilot(True, traffic_manager.get_port())
+
     return vehicle, lidar
 
 def add_open3d_axis(vis):
@@ -111,13 +108,21 @@ def main():
     world = client.get_world()
     blueprint_library = world.get_blueprint_library()
 
+    # Configuración del Traffic Manager
+    traffic_manager = client.get_trafficmanager(8000)
+    traffic_manager.set_synchronous_mode(True)  # Asegurar que el Traffic Manager esté sincronizado
+    traffic_manager.set_global_distance_to_leading_vehicle(2.5)  # Distancia de seguridad entre vehículos
+
     settings = world.get_settings()
+    delta = 0.05
+
+    settings.fixed_delta_seconds = delta
     settings.synchronous_mode = True  # Activar modo sincronizado para modo sin renderizar
     world.apply_settings(settings)
 
     # Global para evitar que los actores se eliminen automáticamente
     global actor_list
-    vehicle, lidar = spawn_vehicle_lidar(world, blueprint_library)
+    vehicle, lidar = spawn_vehicle_lidar(world, blueprint_library, traffic_manager, delta)
     actor_list.append(vehicle)
     actor_list.append(lidar)
 

@@ -57,7 +57,7 @@ plugins:
 author:
   name   : "Félix Martínez Alonso"
   avatar : "/assets/images/bio-photo.jpg"
-  bio    : "Estudiante del Grado en Ingeniería de Sistemas Audiovisuales y Multimedia en la Universidad Rey Juan Carlos"
+  bio    : "Estudiante del Grado en Ingeniería de Telecomunicaciones en Sistemas Audiovisuales y Multimedia en la Universidad Rey Juan Carlos"
   links:
     - label: "GitHub"
       icon: "fab fa-fw fa-github"

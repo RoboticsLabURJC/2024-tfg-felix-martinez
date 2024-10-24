@@ -2,7 +2,6 @@ import open3d as o3d
 import numpy as np
 import os
 import time
-import asyncio
 import matplotlib.pyplot as plt
 from plyfile import PlyData
 

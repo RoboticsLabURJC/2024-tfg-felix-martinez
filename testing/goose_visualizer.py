@@ -10,6 +10,7 @@ from plyfile import PlyData
 path = '/home/felix/Escritorio/TFG/datasets/Goose/goose_3d_val/lidar/val/2023-05-15_neubiberg_rain'
 colormaps_list = ['plasma', 'jet', 'inferno']
 reduced = [False]
+FPS = 1
 
 # ------- Functions -------
 
@@ -28,11 +29,24 @@ def read_bin_file(file_path):
 
 def load_path_files(path) -> list:
     '''
-    Loads into a array the name of all existing files in a path
+    Loads into an array the names of all existing .bin files in the path and orders them based on the sample number in the format __XXXX
     '''
+    def extract_sample_number(file_name):
+        # Split the filename by "__" and take the part after "__"
+        parts = file_name.split("__")
+        if len(parts) > 1:
+            # Try to extract the number after the first "__"
+            num_str = ''.join([char for char in parts[1] if char.isdigit()])
+            return int(num_str) if num_str.isdigit() else 0
+        return 0
+
+    # Get the list of all .bin files in the directory
     file_paths = [os.path.join(path, file) for file in os.listdir(path) if file.endswith(".bin")]
 
-    return file_paths
+    # Sort the files based on the sample number extracted by the function
+    sorted_file_paths = sorted(file_paths, key=lambda file: extract_sample_number(os.path.basename(file)))
+
+    return sorted_file_paths
 
 def set_colors(remissions) -> np.ndarray:
     '''
@@ -69,15 +83,17 @@ def update_pointcloud(path_file, point_cloud) -> None:
     colors = set_colors(remissions)
     add_new_sample(point_cloud, points, colors)
 
+    print(f'Archivo: {path_file}')
+
 def configure_visualizer(vis) -> None:
     '''
     Configures some parameters of the visualizer
     '''
     view_control = vis.get_view_control()
-    view_control.set_front([1,0,0.7])
+    view_control.set_front([-1,0,0.4])
     view_control.set_lookat([0,0,0])
     view_control.set_up([0,0,1])
-    view_control.set_zoom(0.02)
+    view_control.set_zoom(0.01)
 
 def add_sensor_geometry(vis) -> None:
     '''
@@ -92,7 +108,7 @@ def add_axis(vis) -> None:
     '''
     Adds the axis into the visualizer
     '''
-    axis = o3d.geometry.TriangleMesh.create_coordinate_frame(size=4.0, origin=[0, 0, 0])  # Tamaño ajustable
+    axis = o3d.geometry.TriangleMesh.create_coordinate_frame(size=2.0, origin=[0, 0, 0])  # Tamaño ajustable
     vis.add_geometry(axis)
 
 def vis_pointcloud(vis, point_cloud) -> None:
@@ -144,6 +160,8 @@ def vis_sequences():
     vis = o3d.visualization.VisualizerWithKeyCallback()
     vis.create_window(window_name='PointCloud Sequence')
     vis.add_geometry(point_cloud)
+    add_sensor_geometry(vis)
+    add_axis(vis)
 
     # Call to configure the camera view once the geometry has been added
     configure_visualizer(vis)
@@ -153,7 +171,7 @@ def vis_sequences():
 
     def update_frame(vis):
         current_time = time.time()
-        if current_time - last_update_time[0] >= 0.5:  # Adjust the speed for faster updates
+        if current_time - last_update_time[0] >= 1/FPS:  # Adjust the speed for faster updates
             frame[0] += 1
             if frame[0] >= num_files:
                 frame[0] = 0  # Loop the sequence if desired

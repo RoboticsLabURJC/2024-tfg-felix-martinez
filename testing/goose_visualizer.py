@@ -7,7 +7,7 @@ from plyfile import PlyData
 
 # ------ Global Variables -------
 
-path = '/Users/felixmaral/Desktop/TFG/datasets/goose_3d_val/lidar/val/2023-05-15_neubiberg_rain'
+path = '/home/felix/Escritorio/TFG/datasets/Goose/goose_3d_val/lidar/val/2023-05-15_neubiberg_rain'
 colormaps_list = ['plasma', 'jet', 'inferno']
 reduced = [False]
 
@@ -77,7 +77,7 @@ def configure_visualizer(vis) -> None:
     view_control.set_front([1,0,0.7])
     view_control.set_lookat([0,0,0])
     view_control.set_up([0,0,1])
-    view_control.ser_zoom(0.02)
+    view_control.set_zoom(0.02)
 
 def add_sensor_geometry(vis) -> None:
     '''
@@ -135,32 +135,42 @@ def vis_first_file() -> None:
     vis.run()
     vis.destroy_window()
 
-def vis_secuences():
+def vis_sequences():
 
-    frame = 0
     path_file_list = load_path_files(path)
+    num_files = len(path_file_list)
     point_cloud = o3d.geometry.PointCloud()
-    update_pointcloud(path_file_list[frame], point_cloud)
-    
-    vis = o3d.visualization.Visualizer()
+    update_pointcloud(path_file_list[0], point_cloud)
+
+    vis = o3d.visualization.VisualizerWithKeyCallback()
+    vis.create_window(window_name='PointCloud Sequence')
     configure_visualizer(vis)
-    vis_pointcloud(vis)
+
+    vis.add_geometry(point_cloud)
+
+    frame = [0]
+    last_update_time = [time.time()]  # Track the time of the last update
+
+    def update_frame(vis):
+        current_time = time.time()
+
+        if current_time - last_update_time[0] >= 0.001:
+            frame[0] += 1
+            if frame[0] >= num_files:
+                frame[0] = 0  # Reset to loop the sequence if desired
+
+            update_pointcloud(path_file_list[frame[0]], point_cloud)
+            vis.update_geometry(point_cloud)
+            vis.poll_events()
+            vis.update_renderer()
+
+            last_update_time[0] = current_time  # Update the time of the last update
+
+    # Set a timer callback to update the frame
+    vis.register_animation_callback(lambda vis: update_frame(vis))
+    
     vis.run()
-
-    while True:
-
-        frame += 1
-
-        update_pointcloud(path_file_list[frame], point_cloud)
-
-        vis.poll_events()
-        vis.update_renderer()
-        
-        time.sleep(0.01) # frames time
-
-        if not vis.poll_events():
-            print("Exiting visualization")
-            break
+    vis.destroy_window()
 
 # ------ Main Program ------
 
@@ -169,4 +179,4 @@ def main():
 
 if __name__ == "__main__":
     
-    vis_secuences()
+    vis_sequences()

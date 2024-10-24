@@ -136,7 +136,6 @@ def vis_first_file() -> None:
     vis.destroy_window()
 
 def vis_sequences():
-
     path_file_list = load_path_files(path)
     num_files = len(path_file_list)
     point_cloud = o3d.geometry.PointCloud()
@@ -144,29 +143,28 @@ def vis_sequences():
 
     vis = o3d.visualization.VisualizerWithKeyCallback()
     vis.create_window(window_name='PointCloud Sequence')
-    configure_visualizer(vis)
-
     vis.add_geometry(point_cloud)
+
+    # Call to configure the camera view once the geometry has been added
+    configure_visualizer(vis)
 
     frame = [0]
     last_update_time = [time.time()]  # Track the time of the last update
 
     def update_frame(vis):
         current_time = time.time()
-
-        if current_time - last_update_time[0] >= 0.001:
+        if current_time - last_update_time[0] >= 0.5:  # Adjust the speed for faster updates
             frame[0] += 1
             if frame[0] >= num_files:
-                frame[0] = 0  # Reset to loop the sequence if desired
+                frame[0] = 0  # Loop the sequence if desired
 
             update_pointcloud(path_file_list[frame[0]], point_cloud)
             vis.update_geometry(point_cloud)
-            vis.poll_events()
             vis.update_renderer()
 
             last_update_time[0] = current_time  # Update the time of the last update
 
-    # Set a timer callback to update the frame
+    # Register a callback for each frame
     vis.register_animation_callback(lambda vis: update_frame(vis))
     
     vis.run()

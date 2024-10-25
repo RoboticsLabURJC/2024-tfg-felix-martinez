@@ -3,14 +3,16 @@ import numpy as np
 import os
 import time
 import matplotlib.pyplot as plt
-from plyfile import PlyData
 
 # ------ Global Variables -------
 
-path = '/home/felix/Escritorio/TFG/datasets/Goose/goose_3d_val/lidar/val/2023-05-15_neubiberg_rain'
-colormaps_list = ['plasma', 'jet', 'inferno']
+path = '/Users/felixmaral/Desktop/TFG/datasets/goose_3d_val/lidar/val/2023-05-15_neubiberg_rain'
+#path = '/home/felix/Escritorio/TFG/datasets/Goose/goose_3d_val/lidar/val/2023-05-15_neubiberg_rain'
+colormaps_list = ['plasma', 'jet', 'inferno', 'viridis', 'cividis', 'turbo', 'coolwarm']
 reduced = [False]
-FPS = 1
+FPS = [0.5]
+zoom_third_person = 0.01
+zoom_top = 0.06
 
 # ------- Functions -------
 
@@ -48,18 +50,25 @@ def load_path_files(path) -> list:
 
     return sorted_file_paths
 
-def set_colors(remissions) -> np.ndarray:
+def set_colors(remissions, colormap_name='plasma') -> np.ndarray:
     '''
-    Normalizes the remissions and set a colormap for an later linear visualization
+    Normalizes the remissions and applies the specified colormap for visualization.
     '''
     # Normalizing remissions
     norm_remissions = np.asarray(remissions)
     norm_remissions = (norm_remissions - norm_remissions.min()) / (norm_remissions.max() - norm_remissions.min())
-    # Setting a colormap
-    cmap = plt.get_cmap(colormaps_list[0])
-    colors = cmap(norm_remissions)[:, :3]
+    # Setting the specified colormap
+    cmap = plt.get_cmap(colormap_name)
+    colors = cmap(norm_remissions)[:, :3]  # Get RGB components
 
     return colors
+
+def update_colors(point_cloud, remissions, colormap_name='plasma') -> None:
+    '''
+    Updates the point cloud colors using the specified colormap.
+    '''
+    colors = set_colors(remissions, colormap_name)
+    point_cloud.colors = o3d.utility.Vector3dVector(colors)
 
 def print_num_points(point_cloud) -> None:
     '''
@@ -85,15 +94,33 @@ def update_pointcloud(path_file, point_cloud) -> None:
 
     print(f'Archivo: {path_file}')
 
-def configure_visualizer(vis) -> None:
+def configure_render_options(vis) -> None:
     '''
-    Configures some parameters of the visualizer
+    Configures the size of the points
+    '''
+    vis.get_render_option().background_color = [0.05, 0.05, 0.05]
+    vis.get_render_option().point_size = 1.5
+    vis.get_render_option().show_coordinate_frame = False
+
+def configure_camera_third_person(vis) -> None:
+    '''
+    Configures the camera to view in third person
     '''
     view_control = vis.get_view_control()
     view_control.set_front([-1,0,0.4])
     view_control.set_lookat([0,0,0])
     view_control.set_up([0,0,1])
-    view_control.set_zoom(0.01)
+    view_control.set_zoom(zoom_third_person)
+
+def configure_camera_top(vis) -> None:
+    '''
+    Configures the camera to view in a top view
+    '''
+    view_control = vis.get_view_control()
+    view_control.set_front([0,0,1])
+    view_control.set_lookat([0,0,0])
+    view_control.set_up([1,0,0])
+    view_control.set_zoom(zoom_top)
 
 def add_sensor_geometry(vis) -> None:
     '''
@@ -152,41 +179,104 @@ def vis_first_file() -> None:
     vis.destroy_window()
 
 def vis_sequences():
+    '''
+    Displays sequences of samples at a certains FPS,
+    it also has 2 cameras available and the possibility of changing the colormap
+    '''
     path_file_list = load_path_files(path)
     num_files = len(path_file_list)
     point_cloud = o3d.geometry.PointCloud()
-    update_pointcloud(path_file_list[0], point_cloud)
+    points, remissions_data = read_bin_file(path_file_list[0])
+    remissions = [remissions_data]  # Hacer remissions mutable usando una lista
+    add_new_sample(point_cloud, points, set_colors(remissions[0], colormaps_list[0]))
 
     vis = o3d.visualization.VisualizerWithKeyCallback()
     vis.create_window(window_name='PointCloud Sequence')
     vis.add_geometry(point_cloud)
+    configure_render_options(vis)
     add_sensor_geometry(vis)
     add_axis(vis)
 
-    # Call to configure the camera view once the geometry has been added
-    configure_visualizer(vis)
+    is_third_person = [True]
+    colormap_index = [0]
+    current_colormap = [colormaps_list[0]]
+    background = [False]
+    is_paused = [False]
+
+    # Configuración inicial de la cámara
+    configure_camera_third_person(vis)
+
+    def toggle_camera(vis):
+        if is_third_person[0]:
+            configure_camera_top(vis)
+        else:
+            configure_camera_third_person(vis)
+        is_third_person[0] = not is_third_person[0]
+        vis.update_renderer()
+
+    def toggle_colormap(vis):
+        colormap_index[0] = (colormap_index[0] + 1) % len(colormaps_list)
+        current_colormap[0] = colormaps_list[colormap_index[0]]
+        update_colors(point_cloud, remissions[0], current_colormap[0])
+        vis.update_geometry(point_cloud)
+        vis.update_renderer()
+        print(f'Colormap changed to: {current_colormap[0]}')
+
+    def toggle_background(vis):
+        if background[0]:
+            vis.get_render_option().background_color = [0.05, 0.05, 0.05]
+        else:
+            vis.get_render_option().background_color = [0.95, 0.95, 0.95]
+        background[0] = not background[0]
+        vis.update_renderer()
+
+    def toggle_pause(vis):
+        is_paused[0] = not is_paused[0]
+        print("Paused" if is_paused[0] else "Playing")
+
+    def increase_fps(vis):
+        FPS[0] += 0.5
+        print(f"FPS increased to: {FPS[0]}")
+
+    def decrease_fps(vis):
+        FPS[0] = max(0.1, FPS[0] - 0.5)  # No bajar de 0.1
+        print(f"FPS decreased to: {FPS[0]}")
+
+    # callbacks
+    vis.register_key_callback(ord("V"), toggle_camera)  # camera 'V'
+    vis.register_key_callback(ord("C"), toggle_colormap)  # colormap 'C'
+    vis.register_key_callback(ord("B"), toggle_background)  # background color 'B'
+    vis.register_key_callback(32, toggle_pause)  # pausa/reanuda con barra espaciadora
+    vis.register_key_callback(ord(","), decrease_fps)  # disminuir FPS con ','
+    vis.register_key_callback(ord("."), increase_fps)  # aumentar FPS con '.'
 
     frame = [0]
     last_update_time = [time.time()]  # Track the time of the last update
 
     def update_frame(vis):
+        if is_paused[0]:
+            return
+
         current_time = time.time()
-        if current_time - last_update_time[0] >= 1/FPS:  # Adjust the speed for faster updates
+        if current_time - last_update_time[0] >= 1/FPS[0]:  # Ajusta la velocidad de actualización con FPS
             frame[0] += 1
             if frame[0] >= num_files:
-                frame[0] = 0  # Loop the sequence if desired
+                frame[0] = 0  # Reinicia la secuencia
 
-            update_pointcloud(path_file_list[frame[0]], point_cloud)
+            points, remissions_data = read_bin_file(path_file_list[frame[0]])
+            remissions[0] = remissions_data  # Actualizar remissions para el nuevo archivo
+            add_new_sample(point_cloud, points, set_colors(remissions[0], current_colormap[0]))
             vis.update_geometry(point_cloud)
             vis.update_renderer()
 
-            last_update_time[0] = current_time  # Update the time of the last update
+            last_update_time[0] = current_time  # Actualiza el tiempo de la última actualización
 
-    # Register a callback for each frame
+    # Registrar la actualización de fotogramas
     vis.register_animation_callback(lambda vis: update_frame(vis))
-    
+
     vis.run()
     vis.destroy_window()
+
 
 # ------ Main Program ------
 

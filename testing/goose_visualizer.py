@@ -5,9 +5,8 @@ import time
 import matplotlib.pyplot as plt
 
 # ------ Global Variables -------
-
-path = '/Users/felixmaral/Desktop/TFG/datasets/goose_3d_val/lidar/val/2023-05-15_neubiberg_rain'
-#path = '/home/felix/Escritorio/TFG/datasets/Goose/goose_3d_val/lidar/val/2023-05-15_neubiberg_rain'
+#path = '/Users/felixmaral/Desktop/TFG/datasets/goose_3d_val/lidar/val/2023-05-15_neubiberg_rain'
+path = '/home/felix/Escritorio/TFG/datasets/Goose/goose_3d_val/lidar/val/2023-05-15_neubiberg_rain'
 colormaps_list = ['plasma', 'jet', 'inferno', 'viridis', 'cividis', 'turbo', 'coolwarm']
 reduced = [False]
 FPS = [0.5]
@@ -235,6 +234,8 @@ def vis_sequences():
         print("Paused" if is_paused[0] else "Playing")
 
     def increase_fps(vis):
+        if FPS[0] == 0.1:
+            FPS[0] += 0.4
         FPS[0] += 0.5
         print(f"FPS increased to: {FPS[0]}")
 
@@ -247,8 +248,9 @@ def vis_sequences():
     vis.register_key_callback(ord("C"), toggle_colormap)  # colormap 'C'
     vis.register_key_callback(ord("B"), toggle_background)  # background color 'B'
     vis.register_key_callback(32, toggle_pause)  # pausa/reanuda con barra espaciadora
-    vis.register_key_callback(ord(","), decrease_fps)  # disminuir FPS con ','
-    vis.register_key_callback(ord("."), increase_fps)  # aumentar FPS con '.'
+    vis.register_key_callback(265, increase_fps)  # aumentar FPS con flecha arriba
+    vis.register_key_callback(264, decrease_fps)  # disminuir FPS con flecha abajo
+
 
     frame = [0]
     last_update_time = [time.time()]  # Track the time of the last update

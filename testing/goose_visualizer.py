@@ -29,7 +29,7 @@ def read_bin_file(file_path):
 
     return points, remissions
 
-def load_path_files(path) -> list:
+def load_path_bin_files(path) -> list:
     '''
     Loads into an array the names of all existing .bin files in the path and orders them based on the sample number in the format __XXXX
     '''
@@ -155,7 +155,7 @@ def print_points_first_file() -> None:
     '''
     Prints the number of points from the first file in the path
     '''
-    path_file = load_path_files(path)[0]
+    path_file = load_path_bin_files(path)[0]
     points, remissions = read_bin_file(path_file)
     colors = set_colors(remissions)
     point_cloud = o3d.geometry.PointCloud()
@@ -167,7 +167,7 @@ def vis_first_file() -> None:
     '''
     Visualizes the first file in the path
     '''
-    path_file = load_path_files(path)[0]
+    path_file = load_path_bin_files(path)[0]
     # creating visualizer
     vis = o3d.visualization.Visualizer()
     vis.create_window(window_name='First Sample')
@@ -183,7 +183,7 @@ def vis_sequences():
     Displays sequences of samples at a certains FPS,
     it also has 2 cameras available and the possibility of changing the colormap
     '''
-    path_file_list = load_path_files(path)
+    path_file_list = load_path_bin_files(path)
     num_files = len(path_file_list)
     point_cloud = o3d.geometry.PointCloud()
     points, remissions_data = read_bin_file(path_file_list[0])

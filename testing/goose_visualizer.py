@@ -3,10 +3,11 @@ import numpy as np
 import os
 import time
 import matplotlib.pyplot as plt
+import sys
 
 # ------ Global Variables -------
-#path = '/Users/felixmaral/Desktop/TFG/datasets/goose_3d_val/lidar/val/2023-05-15_neubiberg_rain'
-path = '/home/felix/Escritorio/TFG/datasets/Goose/goose_3d_val/lidar/val/2023-05-15_neubiberg_rain'
+path = '/Users/felixmaral/Desktop/TFG/datasets/goose_3d_val/lidar/val/2023-05-15_neubiberg_rain'
+# path = '/home/felix/Escritorio/TFG/datasets/Goose/goose_3d_val/lidar/val/2023-05-15_neubiberg_rain'
 colormaps_list = ['plasma', 'jet', 'inferno', 'viridis', 'cividis', 'turbo', 'coolwarm']
 reduced = [False]
 FPS = [0.5]
@@ -183,10 +184,17 @@ def vis_sequences():
     it also has 2 cameras available and the possibility of changing the colormap
     '''
     path_file_list = load_path_bin_files(path)
-    num_files = len(path_file_list)
+    bin_files = [file for file in path_file_list if file.endswith('.bin')]
+    
+    if not bin_files:
+        print("No .bin files found in the directory for the sequence.")
+        print("Please add .bin files to the directory and try again.")
+        sys.exit(1)
+
+    num_files = len(bin_files)
     point_cloud = o3d.geometry.PointCloud()
-    points, remissions_data = read_bin_file(path_file_list[0])
-    remissions = [remissions_data]  # Hacer remissions mutable usando una lista
+    points, remissions_data = read_bin_file(bin_files[0])
+    remissions = [remissions_data]
     add_new_sample(point_cloud, points, set_colors(remissions[0], colormaps_list[0]))
 
     vis = o3d.visualization.VisualizerWithKeyCallback()
@@ -201,6 +209,7 @@ def vis_sequences():
     current_colormap = [colormaps_list[0]]
     background = [False]
     is_paused = [False]
+    is_auto_mode = [True]  # True para automático, False para manual
 
     # Configuración inicial de la cámara
     configure_camera_third_person(vis)
@@ -234,14 +243,32 @@ def vis_sequences():
         print("Paused" if is_paused[0] else "Playing")
 
     def increase_fps(vis):
-        if FPS[0] == 0.1:
-            FPS[0] += 0.4
         FPS[0] += 0.5
         print(f"FPS increased to: {FPS[0]}")
 
     def decrease_fps(vis):
-        FPS[0] = max(0.1, FPS[0] - 0.5)  # No bajar de 0.1
+        FPS[0] = max(0.1, FPS[0] - 0.5)
         print(f"FPS decreased to: {FPS[0]}")
+
+    def toggle_mode(vis):
+        is_auto_mode[0] = not is_auto_mode[0]
+        mode = "Automatic" if is_auto_mode[0] else "Manual"
+        print(f"Mode changed to: {mode}")
+
+    def next_frame():
+        frame[0] = (frame[0] + 1) % num_files
+        update_point_cloud()
+
+    def prev_frame():
+        frame[0] = (frame[0] - 1) % num_files
+        update_point_cloud()
+
+    def update_point_cloud():
+        points, remissions_data = read_bin_file(bin_files[frame[0]])
+        remissions[0] = remissions_data
+        add_new_sample(point_cloud, points, set_colors(remissions[0], current_colormap[0]))
+        vis.update_geometry(point_cloud)
+        vis.update_renderer()
 
     # callbacks
     vis.register_key_callback(ord("V"), toggle_camera)  # camera 'V'
@@ -250,35 +277,29 @@ def vis_sequences():
     vis.register_key_callback(32, toggle_pause)  # pausa/reanuda con barra espaciadora
     vis.register_key_callback(265, increase_fps)  # aumentar FPS con flecha arriba
     vis.register_key_callback(264, decrease_fps)  # disminuir FPS con flecha abajo
+    vis.register_key_callback(ord("M"), toggle_mode)  # cambia entre modo automático y manual
 
+    # Flechas izquierda y derecha solo para el modo manual
+    vis.register_key_callback(262, lambda vis: next_frame() if not is_auto_mode[0] else None)  # Flecha derecha para siguiente
+    vis.register_key_callback(263, lambda vis: prev_frame() if not is_auto_mode[0] else None)  # Flecha izquierda para anterior
 
     frame = [0]
-    last_update_time = [time.time()]  # Track the time of the last update
+    last_update_time = [time.time()]
 
     def update_frame(vis):
-        if is_paused[0]:
+        if is_paused[0] or not is_auto_mode[0]:  # En pausa o en modo manual, no avanzar automáticamente
             return
 
         current_time = time.time()
-        if current_time - last_update_time[0] >= 1/FPS[0]:  # Ajusta la velocidad de actualización con FPS
-            frame[0] += 1
-            if frame[0] >= num_files:
-                frame[0] = 0  # Reinicia la secuencia
-
-            points, remissions_data = read_bin_file(path_file_list[frame[0]])
-            remissions[0] = remissions_data  # Actualizar remissions para el nuevo archivo
-            add_new_sample(point_cloud, points, set_colors(remissions[0], current_colormap[0]))
-            vis.update_geometry(point_cloud)
-            vis.update_renderer()
-
-            last_update_time[0] = current_time  # Actualiza el tiempo de la última actualización
+        if current_time - last_update_time[0] >= 1 / FPS[0]:
+            next_frame()
+            last_update_time[0] = current_time
 
     # Registrar la actualización de fotogramas
     vis.register_animation_callback(lambda vis: update_frame(vis))
 
     vis.run()
     vis.destroy_window()
-
 
 # ------ Main Program ------
 

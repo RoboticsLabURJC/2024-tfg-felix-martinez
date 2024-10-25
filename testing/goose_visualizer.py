@@ -76,8 +76,9 @@ def resample_points(points, remissions, factor=3):
 
 def configure_render_options(vis):
     '''
-    Sets some parametres for the renderer
+    Sets parameters for the renderer, including a black background.
     '''
+    vis.get_render_option().background_color = [0.05, 0.05, 0.05]  # Black background
     vis.get_render_option().point_size = 1.5
 
 def configure_camera_third_person(vis):
@@ -97,7 +98,7 @@ def configure_camera_top(vis):
     view_control = vis.get_view_control()
     view_control.set_front([0, 0, 1])
     view_control.set_lookat([0, 0, 0])
-    view_control.set_up([0, 1, 0])
+    view_control.set_up([1, 0, 0])
     view_control.set_zoom(zoom_top)
 
 def vis_sequences():
@@ -121,7 +122,7 @@ def vis_sequences():
 
     vis = o3d.visualization.VisualizerWithKeyCallback()
     vis.create_window(window_name='PointCloud Sequence')
-    configure_render_options(vis)
+    configure_render_options(vis)  # Configure black background and point size
     vis.add_geometry(point_cloud)
 
     configure_camera_third_person(vis)
@@ -163,8 +164,6 @@ def vis_sequences():
         print("Paused" if is_paused[0] else "Playing")
 
     def increase_fps(vis):
-        if  FPS[0] == 0.1:
-            FPS[0] += 0.4
         FPS[0] += 0.5
         print(f"FPS increased to: {FPS[0]}")
 
@@ -202,13 +201,13 @@ def vis_sequences():
     vis.register_key_callback(ord("V"), toggle_camera)
     vis.register_key_callback(ord("C"), toggle_colormap)
     vis.register_key_callback(ord("B"), toggle_background)
-    vis.register_key_callback(32, toggle_pause)  # Barra espaciadora
-    vis.register_key_callback(265, increase_fps)  # Flecha arriba
-    vis.register_key_callback(264, decrease_fps)  # Flecha abajo
-    vis.register_key_callback(ord("M"), toggle_mode)  # Modo manual/automático
-    vis.register_key_callback(ord("N"), toggle_resampling)  # Remuestreo 1:3
-    vis.register_key_callback(262, lambda vis: next_frame() if not is_auto_mode[0] else None)  # Flecha derecha
-    vis.register_key_callback(263, lambda vis: prev_frame() if not is_auto_mode[0] else None)  # Flecha izquierda
+    vis.register_key_callback(32, toggle_pause)
+    vis.register_key_callback(265, increase_fps)
+    vis.register_key_callback(264, decrease_fps)
+    vis.register_key_callback(ord("M"), toggle_mode)
+    vis.register_key_callback(ord("N"), toggle_resampling)
+    vis.register_key_callback(262, lambda vis: next_frame() if not is_auto_mode[0] else None)
+    vis.register_key_callback(263, lambda vis: prev_frame() if not is_auto_mode[0] else None)
 
     frame = [0]
     last_update_time = [time.time()]

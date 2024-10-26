@@ -4,10 +4,12 @@ import os
 import time
 import matplotlib.pyplot as plt
 import sys
+from plyfile import PlyData
 
 # ------ Global Variables -------
 
-path = '/Users/felixmaral/Desktop/TFG/datasets/goose_3d_val/lidar/val/2023-05-15_neubiberg_rain'
+#path = '/Users/felixmaral/Desktop/TFG/datasets/goose_3d_val/lidar/val/2023-05-15_neubiberg_rain'
+path = '/Users/felixmaral/Desktop/TFG/datasets/Rellis_3D_lidar_example/os1_cloud_node_color_ply'
 colormaps_list = ['plasma', 'jet', 'inferno', 'viridis', 'cividis', 'turbo', 'coolwarm']
 FPS = [0.5]
 zoom_third_person = 0.01
@@ -31,6 +33,29 @@ def read_bin_file(file_path):
     remissions = scan[:, 3]     # get remission
 
     return points, remissions
+
+def read_ply_file(file_path):
+    '''
+     Reads a .ply file and returns an o3d.PointCloud object.
+    Checks if the .ply file exists before attempting to read.
+    '''
+    if not file_path.endswith('.ply') or not os.path.exists(file_path):
+        print(f"Error: .bin file not found at {file_path}")
+        print("Please check that the file exists and try again.")
+        sys.exit(1)
+    
+    plydata = PlyData.read(file_path)
+
+    # components
+    x = plydata['vertex'].data['x']
+    y = plydata['vertex'].data['y']
+    z = plydata['vertex'].data['z']
+    puntos = np.vstack((x, y, z)).T  # array [n,3]
+
+    # Extraer la intensidad
+    intensidad = plydata['vertex'].data['intensity']
+
+    return puntos, intensidad
 
 def load_path_files(path) -> list:
     '''
@@ -106,17 +131,23 @@ def vis_sequences():
     Displays sequences of samples at a certain FPS,
     it also has 2 cameras available and the possibility of changing the colormap
     '''
+
+    is_bin_file = [True]
+
     path_file_list = load_path_files(path)
-    bin_files = [file for file in path_file_list if file.endswith('.bin')]
-    
-    if not bin_files:
-        print("No .bin files found in the directory for the sequence.")
-        print("Please add .bin files to the directory and try again.")
-        sys.exit(1)
+    bin_files = [file for file in path_file_list]
+
+    if bin_files[0].endswith('.ply'):
+        is_bin_file[0] = False
 
     num_files = len(bin_files)
     point_cloud = o3d.geometry.PointCloud()
-    points, remissions_data = read_bin_file(bin_files[0])
+
+    if is_bin_file[0]:
+        points, remissions_data = read_bin_file(bin_files[0])
+    else:
+        points, remissions_data = read_ply_file(bin_files[0])
+
     remissions = [remissions_data]
     add_new_sample(point_cloud, points, set_colors(remissions[0], colormaps_list[0]))
 
@@ -190,7 +221,10 @@ def vis_sequences():
         update_point_cloud()
 
     def update_point_cloud():
-        points, remissions_data = read_bin_file(bin_files[frame[0]])
+        if is_bin_file[0]:
+            points, remissions_data = read_bin_file(bin_files[frame[0]])
+        else:
+            points, remissions_data = read_ply_file(bin_files[frame[0]])
         if is_resampled[0]:
             points, remissions_data = resample_points(points, remissions_data, factor=3)
         remissions[0] = remissions_data

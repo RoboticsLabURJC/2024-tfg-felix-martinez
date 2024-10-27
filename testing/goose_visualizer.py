@@ -9,7 +9,11 @@ from plyfile import PlyData
 # ------ Global Variables -------
 
 #path = '/Users/felixmaral/Desktop/TFG/datasets/goose_3d_val/lidar/val/2023-05-15_neubiberg_rain'
-path = '/Users/felixmaral/Desktop/TFG/datasets/Rellis_3D_lidar_example/os1_cloud_node_color_ply'
+#path = '/Users/felixmaral/Desktop/TFG/datasets/Rellis_3D_lidar_example/os1_cloud_node_color_ply'
+
+#path = '/home/felix/Escritorio/TFG/datasets/Rellis_3D_os1_cloud_node_color_ply/Rellis-3D/00001'
+path = '/home/felix/Escritorio/TFG/datasets/Goose/goose_3d_val/lidar/val/2023-01-20_aying_mangfall_2'
+
 colormaps_list = ['plasma', 'jet', 'inferno', 'viridis', 'cividis', 'turbo', 'coolwarm']
 FPS = [0.5]
 zoom_third_person = 0.01
@@ -68,7 +72,7 @@ def load_path_files(path) -> list:
             return int(num_str) if num_str.isdigit() else 0
         return 0
 
-    file_paths = [os.path.join(path, file) for file in os.listdir(path) if file.endswith(('.bin', '.ply'))]
+    file_paths = [os.path.join(path, file) for file in os.listdir(path)]
     sorted_file_paths = sorted(file_paths, key=lambda file: extract_sample_number(os.path.basename(file)))
     return sorted_file_paths
 

@@ -11,8 +11,8 @@ from plyfile import PlyData
 #path = '/Users/felixmaral/Desktop/TFG/datasets/goose_3d_val/lidar/val/2023-05-15_neubiberg_rain'
 #path = '/Users/felixmaral/Desktop/TFG/datasets/Rellis_3D_lidar_example/os1_cloud_node_color_ply'
 
-#path = '/home/felix/Escritorio/TFG/datasets/Rellis_3D_os1_cloud_node_color_ply/Rellis-3D/00001'
-path = '/home/felix/Escritorio/TFG/datasets/Goose/goose_3d_val/lidar/val/2023-01-20_aying_mangfall_2'
+path = '/home/felix/Escritorio/TFG/datasets/Rellis_3D_os1_cloud_node_color_ply/Rellis-3D/00001/os1_cloud_node_color_ply'
+#path = '/home/felix/Escritorio/TFG/datasets/Goose/goose_3d_val/lidar/val/2023-01-20_aying_mangfall_2'
 
 colormaps_list = ['plasma', 'jet', 'inferno', 'viridis', 'cividis', 'turbo', 'coolwarm']
 FPS = [0.5]
@@ -44,7 +44,7 @@ def read_ply_file(file_path):
     Checks if the .ply file exists before attempting to read.
     '''
     if not file_path.endswith('.ply') or not os.path.exists(file_path):
-        print(f"Error: .bin file not found at {file_path}")
+        print(f"Error: .ply file not found at {file_path}")
         print("Please check that the file exists and try again.")
         sys.exit(1)
     
@@ -63,17 +63,37 @@ def read_ply_file(file_path):
 
 def load_path_files(path) -> list:
     '''
-    Loads the names of all existing .bin and .ply files in the path.
+    Loads the names of all existing .bin and .ply files in the path,
+    and sorts them based on the type of the first file found (.bin or .ply),
+    applying the appropriate extraction method.
     '''
-    def extract_sample_number(file_name):
+    def extract_sample_number_bin(file_name):
+        # Extracción para formato .bin
         parts = file_name.split("__")
         if len(parts) > 1:
             num_str = ''.join([char for char in parts[1] if char.isdigit()])
             return int(num_str) if num_str.isdigit() else 0
         return 0
 
-    file_paths = [os.path.join(path, file) for file in os.listdir(path)]
-    sorted_file_paths = sorted(file_paths, key=lambda file: extract_sample_number(os.path.basename(file)))
+    def extract_sample_number_ply(file_name):
+        # Extracción para formato .ply en "frameXXXXXX-YYYYYYYY"
+        parts = file_name.split("-")
+        if len(parts) > 0 and parts[0].startswith("frame"):
+            num_str = ''.join([char for char in parts[0] if char.isdigit()])
+            return int(num_str) if num_str.isdigit() else 0
+        return 0
+
+    file_paths = [os.path.join(path, file) for file in os.listdir(path) if file.endswith('.bin') or file.endswith('.ply')]
+
+    if file_paths:
+        first_file = os.path.basename(file_paths[0])
+        if first_file.endswith('.bin'):
+            sorted_file_paths = sorted(file_paths, key=lambda file: extract_sample_number_bin(os.path.basename(file)))
+        elif first_file.endswith('.ply'):
+            sorted_file_paths = sorted(file_paths, key=lambda file: extract_sample_number_ply(os.path.basename(file)))
+    else:
+        sorted_file_paths = [] 
+
     return sorted_file_paths
 
 def set_colors(remissions, colormap_name='plasma') -> np.ndarray:
@@ -110,24 +130,32 @@ def configure_render_options(vis):
     vis.get_render_option().background_color = [0.05, 0.05, 0.05]  # Black background
     vis.get_render_option().point_size = 1.5
 
-def configure_camera_third_person(vis):
+def configure_camera_third_person(vis, data_type=True):
     '''
     Configures the camera to view in third person.
     '''
     view_control = vis.get_view_control()
-    view_control.set_front([-1, 0, 0.4])
+    if data_type:
+        view_control.set_front([-1, 0, 0.4])
+    else:
+        view_control.set_front([1, 0, 0.4])
+    
     view_control.set_lookat([0, 0, 0])
     view_control.set_up([0, 0, 1])
     view_control.set_zoom(zoom_third_person)
 
-def configure_camera_top(vis):
+def configure_camera_top(vis, data_type=True):
     '''
     Configures the camera to view in a top view.
     '''
     view_control = vis.get_view_control()
+    if data_type:
+        view_control.set_up([1, 0, 0])
+    else:
+        view_control.set_up([-1, 0, 0])
+        
     view_control.set_front([0, 0, 1])
     view_control.set_lookat([0, 0, 0])
-    view_control.set_up([1, 0, 0])
     view_control.set_zoom(zoom_top)
 
 def vis_sequences():
@@ -160,7 +188,7 @@ def vis_sequences():
     configure_render_options(vis)  # Configure black background and point size
     vis.add_geometry(point_cloud)
 
-    configure_camera_third_person(vis)
+    configure_camera_third_person(vis, is_bin_file[0])
 
     is_third_person = [True]
     colormap_index = [0]
@@ -172,9 +200,16 @@ def vis_sequences():
 
     def toggle_camera(vis):
         if is_third_person[0]:
-            configure_camera_top(vis)
+            if is_bin_file[0]:  # Ahora correctamente indexado
+                configure_camera_top(vis, data_type=True)
+            else:
+                configure_camera_top(vis, data_type=False)
         else:
-            configure_camera_third_person(vis)
+            if is_bin_file[0]:  # Ahora correctamente indexado
+                configure_camera_third_person(vis, data_type=True)
+            else:
+                configure_camera_third_person(vis, data_type=False)
+
         is_third_person[0] = not is_third_person[0]
         vis.update_renderer()
 

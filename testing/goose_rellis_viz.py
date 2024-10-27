@@ -5,211 +5,172 @@ import time
 import matplotlib.pyplot as plt
 import sys
 from plyfile import PlyData
+import tkinter as tk
+from tkinter import filedialog, ttk, messagebox
 
-# ------ Global Variables -------
-
-#path = '/Users/felixmaral/Desktop/TFG/datasets/goose_3d_val/lidar/val/2023-05-15_neubiberg_rain'
-#path = '/Users/felixmaral/Desktop/TFG/datasets/Rellis_3D_lidar_example/os1_cloud_node_color_ply'
-
-path = '/home/felix/Escritorio/TFG/datasets/Rellis_3D_os1_cloud_node_color_ply/Rellis-3D/00001/os1_cloud_node_color_ply'
-#path = '/home/felix/Escritorio/TFG/datasets/Goose/goose_3d_val/lidar/val/2023-01-20_aying_mangfall_2'
-
+# ------ Parámetros y valores por defecto -------
 colormaps_list = ['plasma', 'jet', 'inferno', 'viridis', 'cividis', 'turbo', 'coolwarm']
-FPS = [0.5]
 zoom_third_person = 0.01
 zoom_top = 0.06
 
-# ------- Functions -------
+# ------- Interfaz gráfica para definir los parámetros iniciales -------
+def launch_interface():
+    def start_visualization():
+        # Obtener valores de la GUI
+        path = path_entry.get()
+        colormap = colormap_var.get()
+        fps = float(fps_var.get())
+        
+        # Validar el directorio
+        if not os.path.isdir(path):
+            messagebox.showerror("Error", "El directorio seleccionado no es válido.")
+            return
+        
+        # Cerrar GUI y lanzar la visualización
+        root.destroy()
+        vis_sequences(path, colormap, fps)
+
+    # Configuración de la GUI con Tkinter
+    root = tk.Tk()
+    root.title("Configuración de Visualización 3D")
+    root.geometry("480x330")
+    root.resizable(False, False)
+
+    # Estilos personalizados
+    style = ttk.Style()
+    style.theme_use("clam")  # Tema moderno para ttk
+    style.configure("TLabel", font=("Arial", 10), padding=5)
+    style.configure("TButton", font=("Arial", 10, "bold"), padding=5)
+    style.configure("TEntry", padding=5)
+    style.configure("TCombobox", padding=5)
+
+    # Contenedor principal
+    frame = ttk.Frame(root, padding="20")
+    frame.pack(fill="both", expand=True)
+
+    # Campo de selección de directorio
+    ttk.Label(frame, text="Selecciona el directorio de datos:").grid(row=0, column=0, sticky="w")
+    path_entry = ttk.Entry(frame, width=40)
+    path_entry.grid(row=1, column=0, padx=(0, 10), pady=5)
+    ttk.Button(frame, text="Examinar", command=lambda: path_entry.insert(0, filedialog.askdirectory())).grid(row=1, column=1, pady=5)
+
+    # Selección de Colormap
+    ttk.Label(frame, text="Selecciona el colormap inicial:").grid(row=2, column=0, sticky="w", pady=(10, 0))
+    colormap_var = tk.StringVar(value=colormaps_list[0])
+    colormap_dropdown = ttk.Combobox(frame, textvariable=colormap_var, values=colormaps_list, state="readonly")
+    colormap_dropdown.grid(row=3, column=0, columnspan=2, pady=5, sticky="ew")
+
+    # Selección de FPS
+    ttk.Label(frame, text="FPS inicial:").grid(row=4, column=0, sticky="w", pady=(10, 0))
+    fps_var = tk.StringVar(value="0.5")
+    fps_entry = ttk.Entry(frame, textvariable=fps_var)
+    fps_entry.grid(row=5, column=0, columnspan=2, pady=5, sticky="ew")
+
+    # Botón para iniciar
+    start_button = ttk.Button(frame, text="Iniciar Visualización", command=start_visualization)
+    start_button.grid(row=6, column=0, columnspan=2, pady=(20, 0))
+
+    root.mainloop()
+
+# ------- Funciones de Visualización -------
 
 def read_bin_file(file_path):
-    '''
-    Reads a .bin file and returns an o3d.PointCloud object.
-    Checks if the .bin file exists before attempting to read.
-    '''
     if not file_path.endswith('.bin') or not os.path.exists(file_path):
         print(f"Error: .bin file not found at {file_path}")
-        print("Please check that the file exists and try again.")
         sys.exit(1)
-
-    scan = np.fromfile(file_path, dtype=np.float32)
-    scan = scan.reshape((-1, 4))
-    points = scan[:, 0:3]       # get xyz
-    remissions = scan[:, 3]     # get remission
-
+    scan = np.fromfile(file_path, dtype=np.float32).reshape((-1, 4))
+    points, remissions = scan[:, 0:3], scan[:, 3]
     return points, remissions
 
 def read_ply_file(file_path):
-    '''
-     Reads a .ply file and returns an o3d.PointCloud object.
-    Checks if the .ply file exists before attempting to read.
-    '''
     if not file_path.endswith('.ply') or not os.path.exists(file_path):
         print(f"Error: .ply file not found at {file_path}")
-        print("Please check that the file exists and try again.")
         sys.exit(1)
-    
     plydata = PlyData.read(file_path)
-
-    # components
-    x = plydata['vertex'].data['x']
-    y = plydata['vertex'].data['y']
-    z = plydata['vertex'].data['z']
-    puntos = np.vstack((x, y, z)).T  # array [n,3]
-
-    # Extraer la intensidad
-    intensidad = plydata['vertex'].data['intensity']
-
-    return puntos, intensidad
+    x, y, z = plydata['vertex'].data['x'], plydata['vertex'].data['y'], plydata['vertex'].data['z']
+    points = np.vstack((x, y, z)).T
+    remissions = plydata['vertex'].data['intensity']
+    return points, remissions
 
 def load_path_files(path) -> list:
-    '''
-    Loads the names of all existing .bin and .ply files in the path,
-    and sorts them based on the type of the first file found (.bin or .ply),
-    applying the appropriate extraction method.
-    '''
-    def extract_sample_number_bin(file_name):
-        # Extracción para formato .bin
-        parts = file_name.split("__")
-        if len(parts) > 1:
-            num_str = ''.join([char for char in parts[1] if char.isdigit()])
-            return int(num_str) if num_str.isdigit() else 0
-        return 0
+    def extract_sample_number(file_name, extension):
+        parts = file_name.split("__" if extension == '.bin' else "-")
+        num_str = ''.join(filter(str.isdigit, parts[1] if extension == '.bin' else parts[0]))
+        return int(num_str) if num_str.isdigit() else 0
 
-    def extract_sample_number_ply(file_name):
-        # Extracción para formato .ply en "frameXXXXXX-YYYYYYYY"
-        parts = file_name.split("-")
-        if len(parts) > 0 and parts[0].startswith("frame"):
-            num_str = ''.join([char for char in parts[0] if char.isdigit()])
-            return int(num_str) if num_str.isdigit() else 0
-        return 0
-
-    file_paths = [os.path.join(path, file) for file in os.listdir(path) if file.endswith('.bin') or file.endswith('.ply')]
-
-    if file_paths:
-        first_file = os.path.basename(file_paths[0])
-        if first_file.endswith('.bin'):
-            sorted_file_paths = sorted(file_paths, key=lambda file: extract_sample_number_bin(os.path.basename(file)))
-        elif first_file.endswith('.ply'):
-            sorted_file_paths = sorted(file_paths, key=lambda file: extract_sample_number_ply(os.path.basename(file)))
-    else:
-        sorted_file_paths = [] 
-
-    return sorted_file_paths
+    files = [os.path.join(path, file) for file in os.listdir(path) if file.endswith('.bin') or file.endswith('.ply')]
+    if files:
+        ext = os.path.splitext(files[0])[1]
+        return sorted(files, key=lambda file: extract_sample_number(os.path.basename(file), ext))
+    return []
 
 def set_colors(remissions, colormap_name='plasma') -> np.ndarray:
-    '''
-    Normalizes the remissions and applies the specified colormap for visualization.
-    '''
-    norm_remissions = np.asarray(remissions)
-    norm_remissions = (norm_remissions - norm_remissions.min()) / (norm_remissions.max() - norm_remissions.min())
-    cmap = plt.get_cmap(colormap_name)
-    colors = cmap(norm_remissions)[:, :3]
+    norm_remissions = (remissions - remissions.min()) / (remissions.max() - remissions.min())
+    colors = plt.get_cmap(colormap_name)(norm_remissions)[:, :3]
     return colors
 
-def update_colors(point_cloud, remissions, colormap_name='plasma') -> None:
+def update_colors(point_cloud, remissions, colormap_name='plasma'):
     colors = set_colors(remissions, colormap_name)
     point_cloud.colors = o3d.utility.Vector3dVector(colors)
 
-def add_new_sample(point_cloud, points, colors) -> None:
+def add_new_sample(point_cloud, points, colors):
     point_cloud.points = o3d.utility.Vector3dVector(points)
     point_cloud.colors = o3d.utility.Vector3dVector(colors)
 
-def resample_points(points, remissions, factor=3):
-    '''
-    Resamples the point cloud with a 1:factor ratio.
-    '''
-    indices = np.arange(0, points.shape[0], factor)
-    resampled_points = points[indices]
-    resampled_remissions = remissions[indices]
-    return resampled_points, resampled_remissions
-
 def configure_render_options(vis):
-    '''
-    Sets parameters for the renderer, including a black background.
-    '''
-    vis.get_render_option().background_color = [0.05, 0.05, 0.05]  # Black background
+    vis.get_render_option().background_color = [0.05, 0.05, 0.05]
     vis.get_render_option().point_size = 1.5
 
 def configure_camera_third_person(vis, data_type=True):
-    '''
-    Configures the camera to view in third person.
-    '''
     view_control = vis.get_view_control()
-    if data_type:
-        view_control.set_front([-1, 0, 0.4])
-    else:
-        view_control.set_front([1, 0, 0.4])
-    
+    view_control.set_front([-1, 0, 0.4] if data_type else [1, 0, 0.4])
     view_control.set_lookat([0, 0, 0])
     view_control.set_up([0, 0, 1])
     view_control.set_zoom(zoom_third_person)
 
 def configure_camera_top(vis, data_type=True):
-    '''
-    Configures the camera to view in a top view.
-    '''
     view_control = vis.get_view_control()
-    if data_type:
-        view_control.set_up([1, 0, 0])
-    else:
-        view_control.set_up([-1, 0, 0])
-        
+    view_control.set_up([1, 0, 0] if data_type else [-1, 0, 0])
     view_control.set_front([0, 0, 1])
     view_control.set_lookat([0, 0, 0])
     view_control.set_zoom(zoom_top)
 
-def vis_sequences():
-    '''
-    Displays sequences of samples at a certain FPS,
-    it also has 2 cameras available and the possibility of changing the colormap
-    '''
-
-    is_bin_file = [True]
-
+def vis_sequences(path, initial_colormap='plasma', initial_fps=0.5):
+    FPS = [initial_fps]
+    current_colormap = [initial_colormap]
     path_file_list = load_path_files(path)
-    bin_files = [file for file in path_file_list]
-
-    if bin_files[0].endswith('.ply'):
-        is_bin_file[0] = False
-
-    num_files = len(bin_files)
+    is_bin_file = [path_file_list[0].endswith('.bin')] if path_file_list else [False]
+    num_files = len(path_file_list)
     point_cloud = o3d.geometry.PointCloud()
 
     if is_bin_file[0]:
-        points, remissions_data = read_bin_file(bin_files[0])
+        points, remissions_data = read_bin_file(path_file_list[0])
     else:
-        points, remissions_data = read_ply_file(bin_files[0])
+        points, remissions_data = read_ply_file(path_file_list[0])
 
     remissions = [remissions_data]
-    add_new_sample(point_cloud, points, set_colors(remissions[0], colormaps_list[0]))
+    add_new_sample(point_cloud, points, set_colors(remissions[0], current_colormap[0]))
 
     vis = o3d.visualization.VisualizerWithKeyCallback()
     vis.create_window(window_name='PointCloud Sequence')
-    configure_render_options(vis)  # Configure black background and point size
+    configure_render_options(vis)
     vis.add_geometry(point_cloud)
-
     configure_camera_third_person(vis, is_bin_file[0])
 
     is_third_person = [True]
-    colormap_index = [0]
-    current_colormap = [colormaps_list[0]]
+    colormap_index = [colormaps_list.index(current_colormap[0])]
     background = [False]
     is_paused = [False]
     is_auto_mode = [True]
     is_resampled = [False]
+    frame = [0]
+    last_update_time = [time.time()]
 
     def toggle_camera(vis):
         if is_third_person[0]:
-            if is_bin_file[0]:  # Ahora correctamente indexado
-                configure_camera_top(vis, data_type=True)
-            else:
-                configure_camera_top(vis, data_type=False)
+            configure_camera_top(vis, is_bin_file[0])
         else:
-            if is_bin_file[0]:  # Ahora correctamente indexado
-                configure_camera_third_person(vis, data_type=True)
-            else:
-                configure_camera_third_person(vis, data_type=False)
-
+            configure_camera_third_person(vis, is_bin_file[0])
         is_third_person[0] = not is_third_person[0]
         vis.update_renderer()
 
@@ -222,10 +183,7 @@ def vis_sequences():
         print(f'Colormap changed to: {current_colormap[0]}')
 
     def toggle_background(vis):
-        if background[0]:
-            vis.get_render_option().background_color = [0.05, 0.05, 0.05]
-        else:
-            vis.get_render_option().background_color = [0.95, 0.95, 0.95]
+        vis.get_render_option().background_color = [0.05, 0.05, 0.05] if background[0] else [0.95, 0.95, 0.95]
         background[0] = not background[0]
         vis.update_renderer()
 
@@ -234,21 +192,20 @@ def vis_sequences():
         print("Paused" if is_paused[0] else "Playing")
 
     def increase_fps(vis):
-        FPS[0] += 0.5
+        FPS[0] += 1
         print(f"FPS increased to: {FPS[0]}")
 
     def decrease_fps(vis):
-        FPS[0] = max(0.1, FPS[0] - 0.5)
+        FPS[0] = max(0.1, FPS[0] - 1)
         print(f"FPS decreased to: {FPS[0]}")
 
     def toggle_mode(vis):
         is_auto_mode[0] = not is_auto_mode[0]
-        mode = "Automatic" if is_auto_mode[0] else "Manual"
-        print(f"Mode changed to: {mode}")
+        print("Mode:", "Automatic" if is_auto_mode[0] else "Manual")
 
     def toggle_resampling(vis):
         is_resampled[0] = not is_resampled[0]
-        print("Resampling mode:", "1:3" if is_resampled[0] else "Original")
+        print("Resampling:", "1:3" if is_resampled[0] else "Original")
         update_point_cloud()
 
     def next_frame():
@@ -261,11 +218,11 @@ def vis_sequences():
 
     def update_point_cloud():
         if is_bin_file[0]:
-            points, remissions_data = read_bin_file(bin_files[frame[0]])
+            points, remissions_data = read_bin_file(path_file_list[frame[0]])
         else:
-            points, remissions_data = read_ply_file(bin_files[frame[0]])
+            points, remissions_data = read_ply_file(path_file_list[frame[0]])
         if is_resampled[0]:
-            points, remissions_data = resample_points(points, remissions_data, factor=3)
+            points, remissions_data = points[::3], remissions_data[::3]
         remissions[0] = remissions_data
         add_new_sample(point_cloud, points, set_colors(remissions[0], current_colormap[0]))
         vis.update_geometry(point_cloud)
@@ -282,24 +239,18 @@ def vis_sequences():
     vis.register_key_callback(262, lambda vis: next_frame() if not is_auto_mode[0] else None)
     vis.register_key_callback(263, lambda vis: prev_frame() if not is_auto_mode[0] else None)
 
-    frame = [0]
-    last_update_time = [time.time()]
-
     def update_frame(vis):
         if is_paused[0] or not is_auto_mode[0]:
             return
-
         current_time = time.time()
         if current_time - last_update_time[0] >= 1 / FPS[0]:
             next_frame()
             last_update_time[0] = current_time
 
-    vis.register_animation_callback(lambda vis: update_frame(vis))
-
+    vis.register_animation_callback(update_frame)
     vis.run()
     vis.destroy_window()
 
-# ------ Main Program ------
-
+# ------ Programa Principal ------
 if __name__ == "__main__":
-    vis_sequences()
+    launch_interface()

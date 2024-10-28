@@ -33,7 +33,7 @@ def launch_interface():
     # Configuración de la GUI con Tkinter
     root = tk.Tk()
     root.title("Configuración de Visualización 3D")
-    root.geometry("480x330")
+    root.geometry("520x400")
     root.resizable(False, False)
 
     # Estilos personalizados

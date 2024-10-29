@@ -6,7 +6,6 @@ import random
 from datetime import datetime
 from matplotlib import colormaps as cm
 import sys
-import signal
 import pygame
 
 VIRIDIS = np.array(cm.get_cmap('inferno').colors)
@@ -208,7 +207,3 @@ def signal_handler(sig, frame):
     print("\nInterrupción recibida. Finalizando...")
     cleanup()
     sys.exit(0)
-
-if __name__ == "__main__":
-    signal.signal(signal.SIGINT, signal_handler)
-    main()

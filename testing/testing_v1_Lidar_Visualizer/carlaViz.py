@@ -209,6 +209,6 @@ def signal_handler(sig, frame):
     cleanup()
     sys.exit(0)
 
-if __name__ == "__main__":
-    signal.signal(signal.SIGINT, signal_handler)
-    main()
+#if __name__ == "__main__":
+#    signal.signal(signal.SIGINT, signal_handler)
+#    main()

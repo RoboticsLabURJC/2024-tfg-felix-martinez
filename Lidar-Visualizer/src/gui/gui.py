@@ -14,9 +14,12 @@ zoom_top = 0.06
 def initial_choice():
     # Configuración de la GUI inicial con dos botones
     root = tk.Tk()
-    root.title("Seleccionar Modo")
+    root.title("Seleccionar fuente de datos")
     root.geometry("300x200")
     root.resizable(False, False)
+
+    style = ttk.Style()
+    style.theme_use("clam")  # Tema moderno para ttk
 
     def launch_interface():
         def show_controls_window():
@@ -131,7 +134,7 @@ def initial_choice():
         launch_interface()  # Lanza la interfaz completa para archivos
 
     # Botones de selección
-    ttk.Button(root, text="Carla Simulator", command=on_carla_selected).pack(expand=True, pady=20)
-    ttk.Button(root, text="Files", command=on_files_selected).pack(expand=True, pady=20)
+    ttk.Button(root, text="Carla Simulator", command=on_carla_selected).pack(expand=True, pady=5)
+    ttk.Button(root, text="Files", command=on_files_selected).pack(expand=True, pady=5)
 
     root.mainloop()

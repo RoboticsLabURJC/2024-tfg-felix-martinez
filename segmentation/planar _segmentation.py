@@ -34,8 +34,8 @@ suelo_cloud = pcd.select_by_index(inliers)
 otros_cloud = pcd.select_by_index(inliers, invert=True)
 
 # Colorear el plano del suelo y otros puntos para visualización
-suelo_cloud.paint_uniform_color([1, 0, 0])      # Rojo para el suelo
-otros_cloud.paint_uniform_color([0, 1, 0])      # Verde para el resto
+suelo_cloud.paint_uniform_color([1, 0, 0])
+otros_cloud.paint_uniform_color([1, 1, 1])
 
 # Visualizar el resultado
 o3d.visualization.draw_geometries([suelo_cloud, otros_cloud], window_name="Segmentación del Suelo")

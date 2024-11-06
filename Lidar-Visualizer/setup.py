@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="lidar_visualizer",
-    version="0.2",
+    version="0.3",
     packages=find_packages(where="src"),  
     package_dir={"": "src"},              
     install_requires=[

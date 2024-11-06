@@ -106,17 +106,17 @@ def lidar_callback(lidar_data, point_cloud, vehicle_transform):
     point_cloud.points = o3d.utility.Vector3dVector(points_to_display)
     point_cloud.colors = o3d.utility.Vector3dVector(int_color)
 
-def spawn_vehicle_lidar_camera(world, bp, traffic_manager, delta):
+def spawn_vehicle_lidar_camera(world, bp, traffic_manager, delta, lidar_range=100, channels=64, points_per_second=1200000):
     vehicle_bp = bp.filter('vehicle.*')[0]
     spawn_points = world.get_map().get_spawn_points()
     spawn_point = random.choice(spawn_points)
     vehicle = world.spawn_actor(vehicle_bp, spawn_point)
 
     lidar_bp = bp.find('sensor.lidar.ray_cast')
-    lidar_bp.set_attribute('range', '100')
+    lidar_bp.set_attribute('range', str(lidar_range))
     lidar_bp.set_attribute('rotation_frequency', str(1 / delta))
-    lidar_bp.set_attribute('channels', '64')
-    lidar_bp.set_attribute('points_per_second', '1200000')
+    lidar_bp.set_attribute('channels', str(channels))
+    lidar_bp.set_attribute('points_per_second', str(points_per_second))
     lidar_position = carla.Transform(carla.Location(x=-0.5, z=1.8))
     lidar = world.spawn_actor(lidar_bp, lidar_position, attach_to=vehicle)
 
@@ -179,7 +179,7 @@ def vehicle_control(vehicle):
         control.steer = -0.3 if keys[pygame.K_a] else 0.3 if keys[pygame.K_d] else 0.0
         vehicle.apply_control(control)
 
-def main():
+def main(lidar_range, channels, points_per_second):
     pygame.init()
     # Configurar Pygame sin usar OpenGL explícitamente
     pygame.display.gl_set_attribute(pygame.GL_ACCELERATED_VISUAL, 0)
@@ -203,7 +203,7 @@ def main():
     world.apply_settings(settings)
 
     global actor_list, current_view_index, origin_sphere_added, absolute_view
-    vehicle, lidar, camera = spawn_vehicle_lidar_camera(world, blueprint_library, traffic_manager, delta)
+    vehicle, lidar, camera = spawn_vehicle_lidar_camera(world, blueprint_library, traffic_manager, delta, lidar_range, channels, points_per_second)
     actor_list.append(vehicle)
     actor_list.append(lidar)
     actor_list.append(camera)

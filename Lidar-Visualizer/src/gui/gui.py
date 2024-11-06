@@ -126,8 +126,56 @@ def initial_choice():
         root.mainloop()
 
     def on_carla_selected():
-        root.destroy()
-        carla_main()
+        root.destroy()  # Cierra la ventana inicial
+        # Crear la ventana de configuración de parámetros del sensor
+        config_window = tk.Tk()
+        config_window.title("Configuración de Parámetros del Sensor")
+        config_window.geometry("400x400")
+
+        # Variables para los parámetros
+        range_var = tk.StringVar(value="100")
+        channels_var = tk.StringVar(value="64")
+        pps_var = tk.StringVar(value="1200000")  # Puntos por segundo
+
+        # Campos de entrada para los parámetros
+        ttk.Label(config_window, text="Rango del LiDAR (metros):").pack(pady=5)
+        range_entry = ttk.Entry(config_window, textvariable=range_var)
+        range_entry.pack(pady=5)
+
+        ttk.Label(config_window, text="Canales del LiDAR:").pack(pady=5)
+        channels_entry = ttk.Entry(config_window, textvariable=channels_var)
+        channels_entry.pack(pady=5)
+
+        ttk.Label(config_window, text="Puntos por segundo (PPS):").pack(pady=5)
+        pps_entry = ttk.Entry(config_window, textvariable=pps_var)
+        pps_entry.pack(pady=5)
+
+        def start_carla_with_params():
+            # Obtener los valores actualizados de las entradas
+            lidar_range = range_var.get()
+            channels = channels_var.get()
+            points_per_second = pps_var.get()
+
+            # Imprimir para depurar y verificar los valores ingresados
+            print(f"Starting CARLA with parameters: "
+                f"Range={lidar_range}, Channels={channels}, PPS={points_per_second}")
+
+            try:
+                # Llamar a carla_main() con los parámetros convertidos a los tipos adecuados
+                config_window.destroy()  # Cierra la ventana de configuración si todo va bien
+                carla_main(
+                    float(lidar_range), 
+                    int(channels), 
+                    int(points_per_second)
+                )
+            except ValueError as e:
+                messagebox.showerror("Error de entrada", f"Por favor, ingrese valores válidos.\nError: {e}")
+
+        # Botón de iniciar visualización
+        start_button = ttk.Button(config_window, text="Iniciar Visualización", command=start_carla_with_params)
+        start_button.pack(pady=20)
+
+        config_window.mainloop()
 
     def on_files_selected():
         root.destroy()  # Cierra la ventana inicial

@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="lidar_visualizer",
-    version="0.1",
+    version="0.2",
     packages=find_packages(where="src"),  # Busca los paquetes en la carpeta 'src'
     package_dir={"": "src"},              # Indica que el directorio base para paquetes es 'src'
     install_requires=[

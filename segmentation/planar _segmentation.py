@@ -22,8 +22,7 @@ def calcular_angulo(v1, v2):
     return np.arccos(np.clip(np.dot(v1, v2), -1.0, 1.0)) * (180.0 / np.pi)
 
 # Cargar los datos de la nube de puntos
-data = cargar_nube_bin("/home/felix/Escritorio/TFG/datasets/Goose/goose_3d_val/lidar/val/2023-05-17_neubiberg_sunny/2023-05-17_neubiberg_sunny__0426_1684329911503929495_vls128.bin")
-print(len(data))
+data = cargar_nube_bin("/Users/felixmaral/Desktop/TFG/datasets/goose_3d_val/lidar/val/2023-05-15_neubiberg_rain/2023-05-15_neubiberg_rain__0630_1684157871182323213_vls128.bin")
 
 # Crear la nube de puntos de Open3D
 point_cloud = o3d.geometry.PointCloud()

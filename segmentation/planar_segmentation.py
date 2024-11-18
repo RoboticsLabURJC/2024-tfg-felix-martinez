@@ -1,5 +1,8 @@
 import open3d as o3d
 import numpy as np
+import sys
+import os
+from plyfile import PlyData
 
 def cargar_nube_bin(archivo_bin):
     nube_puntos = np.fromfile(archivo_bin, dtype=np.float32)
@@ -22,14 +25,29 @@ def calcular_angulo(v1, v2):
     return np.arccos(np.clip(np.dot(v1, v2), -1.0, 1.0)) * (180.0 / np.pi)
 
 # Cargar los datos de la nube de puntos
-data = cargar_nube_bin("/Users/felixmaral/Desktop/TFG/datasets/goose_3d_val/lidar/val/2023-05-15_neubiberg_rain/2023-05-15_neubiberg_rain__0630_1684157871182323213_vls128.bin")
+#data = cargar_nube_bin("/home/felix/Escritorio/TFG/2024-tfg-felix-martinez/Lidar-Visualizer/data/examples/goose/2023-05-17_neubiberg_sunny__0381_1684329746496937615_vls128.bin")
 
 # Crear la nube de puntos de Open3D
+#point_cloud = o3d.geometry.PointCloud()
+#point_cloud.points = o3d.utility.Vector3dVector(data)
+
+file_path = "/home/felix/Escritorio/TFG/2024-tfg-felix-martinez/Lidar-Visualizer/data/examples/rellis3d/frame000004-1581797150_855.ply"
+
+if not file_path.endswith('.ply') or not os.path.exists(file_path):
+        print(f"Error: .ply file not found at {file_path}")
+        sys.exit(1)
+plydata = PlyData.read(file_path)
+print(file_path)
+x, y, z = plydata['vertex'].data['x'], plydata['vertex'].data['y'], plydata['vertex'].data['z']
+points = np.vstack((x, y, z)).T
+
 point_cloud = o3d.geometry.PointCloud()
-point_cloud.points = o3d.utility.Vector3dVector(data)
+point_cloud.points = o3d.utility.Vector3dVector(points)
+
+point_cloud = point_cloud.voxel_down_sample(voxel_size=0.1)
 
 # Crear una esfera centrada en el punto (0, 0, 0)
-esfera = o3d.geometry.TriangleMesh.create_sphere(radius=1.0)  # Puedes cambiar el radio si lo deseas
+esfera = o3d.geometry.TriangleMesh.create_sphere(radius=0.5)  # Puedes cambiar el radio si lo deseas
 esfera.translate((0, 0, 0))  # Mover la esfera al punto (0, 0, 0)
 # Colorear la esfera (opcional)
 esfera.paint_uniform_color([1, 1, 0])  # Color rojo

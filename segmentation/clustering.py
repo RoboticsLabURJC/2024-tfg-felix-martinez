@@ -19,7 +19,7 @@ filtro_suelo = puntos[:, 2] > -1.85
 nube_sin_suelo = nube.select_by_index(np.where(filtro_suelo)[0])
 
 # Aplicar filtro de ruido (outliers estadísticos)
-nube_filtrada, ind = nube_sin_suelo.remove_statistical_outlier(nb_neighbors=50, std_ratio=2.0)
+nube_filtrada, ind = nube_sin_suelo.remove_statistical_outlier(nb_neighbors=20, std_ratio=2.0)
 
 # Aplicar el algoritmo DBSCAN para segmentación
 # epsilon es la distancia máxima entre puntos en un mismo cluster
@@ -34,5 +34,13 @@ colors = plt.get_cmap("tab20")(labels / (max_label if max_label > 0 else 1))
 colors[labels < 0] = 0  # Puntos ruidosos sin cluster
 nube_filtrada.colors = o3d.utility.Vector3dVector(colors[:, :3])
 
-# Visualizar la nube de puntos segmentada
-o3d.visualization.draw_geometries([nube_filtrada], window_name="Nube Segmentada")
+# Crear visualizador
+viz = o3d.visualization.Visualizer()
+viz.create_window(window_name = "Clustering DBSCAN")
+
+viz.add_geometry(nube_filtrada)
+render_op = viz.get_render_option()
+render_op.point_size = 1.5
+
+viz.run()
+viz.destroy_window()

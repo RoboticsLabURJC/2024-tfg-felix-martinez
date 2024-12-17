@@ -94,13 +94,13 @@ def build_pointnet(num_classes, input_dim=4):
     inputs = tf.keras.Input(shape=(None, input_dim))  # Entrada: N puntos con D características
 
     # Capa convolucional inicial (clasificación)
-    x = layers.Conv1D(64, 1, activation='relu')(inputs)
+    x = layers.Conv1D(64, 1, activation='relu')(inputs) # 64 Filtros; Kernel_dim = 1 (punto por punto)
     x = layers.Conv1D(128, 1, activation='relu')(x)
     x = layers.Conv1D(1024, 1, activation='relu')(x)
 
-    # Global Feature Aggregation
-    global_features = layers.GlobalMaxPooling1D()(x)
-    global_features = layers.RepeatVector(MAX_POINTS)(global_features)  # Repetir para cada punto
+    # Agregacion de caracteristicas globales
+    global_features = layers.GlobalMaxPooling1D()(x) # MAXpooling de todas las caracteristicas extraidas en esos puntos
+    global_features = layers.RepeatVector(MAX_POINTS)(global_features)  # Repetir para cada punto. Añadir las caracteristicas globales a cada punto de la muestra
     global_features = layers.Conv1D(1024, 1, activation='relu')(global_features)
 
     # Concatenar características globales y locales
@@ -109,7 +109,7 @@ def build_pointnet(num_classes, input_dim=4):
     # Capa convolucional final para segmentación
     x = layers.Conv1D(512, 1, activation='relu')(x)
     x = layers.Conv1D(256, 1, activation='relu')(x)
-    outputs = layers.Conv1D(num_classes, 1, activation='softmax')(x)  # Clasificación por punto
+    outputs = layers.Conv1D(num_classes, 1, activation='softmax')(x)  # Segmentacion por punto
 
     return tf.keras.Model(inputs, outputs)
 
@@ -129,7 +129,7 @@ history = pointnet_model.fit(
     validation_data=(x_val, y_val),
     epochs=10,  # Ajustar según los recursos
     batch_size=8,  # Ajustar según la memoria disponible
-    verbose=1
+    verbose=1 # Muestra barra de progreso durante el entrenamiento
 )
 
 # -----------------------------

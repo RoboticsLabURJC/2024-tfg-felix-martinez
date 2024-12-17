@@ -7,22 +7,8 @@ from tensorflow.keras import layers, models
 
 MAX_POINTS = 14000
 
-def serialize_dataframe_for_pointnet(df):
-    """
-    Convierte un DataFrame en un ejemplo serializado de TFRecord para PointNet.
-    Cada coordenada (x, y, z) se trata como una característica individual.
-    """
-    feature = {
-        'x': tf.train.Feature(float_list=tf.train.FloatList(value=df['x'].values)),
-        'y': tf.train.Feature(float_list=tf.train.FloatList(value=df['y'].values)),
-        'z': tf.train.Feature(float_list=tf.train.FloatList(value=df['z'].values)),
-        'remissions': tf.train.Feature(float_list=tf.train.FloatList(value=df['remissions'].values)),
-        'labels': tf.train.Feature(int64_list=tf.train.Int64List(value=df['label'].values)),
-    }
-    return tf.train.Example(features=tf.train.Features(feature=feature)).SerializeToString()
-
-data_path = '/Users/felixmaral/Desktop/TFG/datasets/goose_3d_val/lidar/val/2022-07-22_flight/'
-labels_path = '/Users/felixmaral/Desktop/TFG/datasets/goose_3d_val/labels/val/2022-07-22_flight/'
+data_path = '/home/felix/Escritorio/TFG/datasets/Goose/goose_3d_val/lidar/val/2022-07-22_flight/'
+labels_path = '/home/felix/Escritorio/TFG/datasets/Goose/goose_3d_val/labels/val/2022-07-22_flight/'
 
 files_list = os.listdir(data_path)
 labels_list = os.listdir(labels_path)
@@ -31,9 +17,10 @@ labels_list = os.listdir(labels_path)
 sorted_files = sorted(files_list, key=lambda x: int(re.search(r'__\d{4,5}_', x).group(0)[2:-1]))
 sorted_labels = sorted(labels_list, key=lambda x: int(re.search(r'__\d{4,5}_', x).group(0)[2:-1]))
 
-points_dfs = []
+points_dfs = [] # array de dataframes donde irá cada muestra Lidar
 
 # Procesar archivos emparejados
+
 for file, label_file in zip(sorted_files, sorted_labels):
     # Cargar el archivo de puntos
     scan = np.fromfile(data_path + file, dtype=np.float32).reshape((-1, 4))
@@ -47,12 +34,11 @@ for file, label_file in zip(sorted_files, sorted_labels):
 
     # Validar tamaños
     if len(points) != len(label):
-        print(f"Mismatch in {file} and {label_file}: Points({len(points)}) != Labels({len(label)})")
+        print(f"Error en {file} y {label_file}: Points({len(points)}) != Labels({len(label)})")
         continue
 
-    # Extraer etiquetas semánticas e instancias
-    sem_label = label & 0xFFFF  # semantic label in lower half
-    inst_label = label >> 16    # instance id in upper half
+    # Extraer etiquetas semánticas
+    sem_label = label & 0xFFFF  # Extracción de los 4 priemros bytes (identificador de clase)  
 
     # Crear un nuevo DataFrame para este archivo
     df = pd.DataFrame(points, columns=['x', 'y', 'z'])
@@ -61,9 +47,9 @@ for file, label_file in zip(sorted_files, sorted_labels):
 
     # Agregar el DataFrame a la lista
     points_dfs.append(df)
-    print(f'\r{sorted_files.index(file)}/{len(sorted_files)}', end='', flush=True)
+    print(f'\r{sorted_files.index(file)}/{len(sorted_files)}', end='', flush=True) # Progreso de la carga de datos
 
-combined_df = pd.concat([df[['x', 'y', 'z', 'remissions']] for df in points_dfs])
+combined_df = pd.concat([df[['x', 'y', 'z', 'remissions']] for df in points_dfs]) # concatenar todos los df en uno para normalización
 
 # Calcular los mínimos y máximos globales para las columnas numéricas
 global_min = combined_df.min()
@@ -94,8 +80,6 @@ points = normalized_npa[:, :, :-1]  # Forma resultante: (151, 14000, 4)
 # Extraer las etiquetas en un array separado
 labels = normalized_npa[:, :, -1]  # Forma resultante: (151, 14000)
 
-print(labels)
-
 # Dividimos en entrenamiento y validación
 from sklearn.model_selection import train_test_split
 x_train, x_val, y_train, y_val = train_test_split(points, labels, test_size=0.2, random_state=42)
@@ -105,11 +89,11 @@ x_train, x_val, y_train, y_val = train_test_split(points, labels, test_size=0.2,
 # -----------------------------
 def build_pointnet(num_classes, input_dim=4):
     """
-    Modelo PointNet para clasificación punto a punto.
+    Modelo PointNet para segmentación punto a punto.
     """
     inputs = tf.keras.Input(shape=(None, input_dim))  # Entrada: N puntos con D características
 
-    # MLP Layers
+    # Capa convolucional inicial (clasificación)
     x = layers.Conv1D(64, 1, activation='relu')(inputs)
     x = layers.Conv1D(128, 1, activation='relu')(x)
     x = layers.Conv1D(1024, 1, activation='relu')(x)
@@ -122,7 +106,7 @@ def build_pointnet(num_classes, input_dim=4):
     # Concatenar características globales y locales
     x = layers.concatenate([x, global_features])
 
-    # MLP final para clasificación
+    # Capa convolucional final para segmentación
     x = layers.Conv1D(512, 1, activation='relu')(x)
     x = layers.Conv1D(256, 1, activation='relu')(x)
     outputs = layers.Conv1D(num_classes, 1, activation='softmax')(x)  # Clasificación por punto
@@ -131,6 +115,7 @@ def build_pointnet(num_classes, input_dim=4):
 
 # Construir y compilar el modelo
 pointnet_model = build_pointnet(num_classes=64, input_dim=4)
+# probar con SGD tambien
 pointnet_model.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
 
 # Resumen del modelo
@@ -184,7 +169,7 @@ plt.figure()
 plt.plot(history_df['accuracy'], label='Entrenamiento')
 plt.plot(history_df['val_accuracy'], label='Validación')
 plt.title('Precisión durante el entrenamiento')
-plt.xlabel('Época')
+plt.xlabel('Epoch')
 plt.ylabel('Precisión')
 plt.legend()
 plt.show()

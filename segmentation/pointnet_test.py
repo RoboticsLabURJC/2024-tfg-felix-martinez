@@ -5,8 +5,6 @@ import pandas as pd
 import tensorflow as tf
 from tensorflow.keras import layers, models
 
-MAX_POINTS = 14000
-
 data_path = '/home/felix/Escritorio/TFG/datasets/Goose/goose_3d_val/lidar/val/2022-07-22_flight/'
 labels_path = '/home/felix/Escritorio/TFG/datasets/Goose/goose_3d_val/labels/val/2022-07-22_flight/'
 
@@ -26,11 +24,11 @@ for file, label_file in zip(sorted_files, sorted_labels):
     scan = np.fromfile(data_path + file, dtype=np.float32).reshape((-1, 4))
 
     # Separar las columnas en xyz y remisiones
-    points = scan[:, 0:3][0:MAX_POINTS]   # Coordenadas XYZ
-    remissions = scan[:, 3][0:MAX_POINTS]  # Remisiones
+    points = scan[:, 0:3]  # Coordenadas XYZ
+    remissions = scan[:, 3]  # Remisiones
 
     # Cargar el archivo de etiquetas correspondiente
-    label = np.fromfile(labels_path + label_file, dtype=np.uint32).reshape((-1))[0:MAX_POINTS]
+    label = np.fromfile(labels_path + label_file, dtype=np.uint32).reshape((-1))
 
     # Validar tamaños
     if len(points) != len(label):
@@ -98,10 +96,11 @@ def build_pointnet(num_classes, input_dim=4):
     x = layers.Conv1D(128, 1, activation='relu')(x)
     x = layers.Conv1D(1024, 1, activation='relu')(x)
 
-    # Agregacion de caracteristicas globales
-    global_features = layers.GlobalMaxPooling1D()(x) # MAXpooling de todas las caracteristicas extraidas en esos puntos
-    global_features = layers.RepeatVector(MAX_POINTS)(global_features)  # Repetir para cada punto. Añadir las caracteristicas globales a cada punto de la muestra
-    global_features = layers.Conv1D(1024, 1, activation='relu')(global_features)
+  # Agregación de características globales
+    global_features = layers.GlobalMaxPooling1D()(x)  # Max pooling global
+    global_features = tf.expand_dims(global_features, axis=1)  # Expandir dimensión para repetir
+    num_points = tf.shape(inputs)[1]  # Obtener número dinámico de puntos
+    global_features = tf.tile(global_features, [1, num_points, 1])  # Repetir dinámicamente  
 
     # Concatenar características globales y locales
     x = layers.concatenate([x, global_features])

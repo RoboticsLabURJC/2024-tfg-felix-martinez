@@ -1,2 +1,7 @@
-import tensorflow as tf
-print("GPU Disponible:", tf.config.list_physical_devices('GPU'))
+import tkinter as tk
+from tkinter import filedialog
+import easygui
+
+
+file = easygui.fileopenbox(title="Selecciona un archivo")
+print(f"Archivo seleccionado: {file}")

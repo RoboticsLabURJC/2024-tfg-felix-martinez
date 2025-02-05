@@ -13,7 +13,7 @@ from pathlib import Path
 ### ------- Rutas -------- ###
 
 # Crear una ventana oculta de Tkinter
-root = tk.Tk()
+root = tk.Tk() 
 root.withdraw()  # Ocultar la ventana principal
 
 # Ruta inicial

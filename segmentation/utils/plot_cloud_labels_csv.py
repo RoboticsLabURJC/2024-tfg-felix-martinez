@@ -83,6 +83,11 @@ pcd.colors = o3d.utility.Vector3dVector(colors)  # Aplicar colores
 vis = o3d.visualization.Visualizer()
 vis.create_window(window_name="Nube de puntos Open3D")
 vis.add_geometry(pcd)
+
+# Ajustar tamaño de los puntos
+opt = vis.get_render_option()
+opt.point_size = 1 
+
 vis.run()
 vis.destroy_window()
 

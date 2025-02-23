@@ -1,6 +1,6 @@
 dataset: GOOSE
 prep: x,y,z < 25m
-car_shape: 16384, 3
+x_shape: 16384, 3
 label_shape: 16384
 
 model: (No dropout)

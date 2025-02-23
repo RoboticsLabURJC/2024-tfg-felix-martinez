@@ -1,0 +1,9 @@
+dataset: GOOSE
+prep: x,y,z < 25m
+car_shape: 16384, 3
+label_shape: 16384
+
+model: (No dropout)
+optimizer: Adam(lr:0.0003)
+loss: Weighted Loss
+metrics: Loss, Accuracy, MeanIoU

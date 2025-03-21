@@ -1,0 +1,1 @@
+Epoch [1] Batch [70/964] Loss: 0.5018

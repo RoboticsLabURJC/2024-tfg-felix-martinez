@@ -203,7 +203,7 @@ class PointNet2SemSeg(nn.Module):
 
     def forward(self, x, remission):
         """
-        x: (B, 3, N)         -> Coordenadas normalizadas
+        x: (B, 3, N)         -> Coordenadas
         remission: (B, 1, N) -> Remission normalizada y alineada con cada punto
         """
         B, _, N = x.shape

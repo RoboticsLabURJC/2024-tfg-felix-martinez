@@ -48,10 +48,17 @@ device = None
 NUM_POINTS_FOR_INFERENCE = 8192 # Número de puntos que espera tu modelo
 # Define los colores para cada clase. (Ej: 0=Fondo, 1=Vehículo, 2=Peatón)
 # Puedes personalizarlos. Formato [R, G, B] normalizado.
+# ESTA ES LA VERSIÓN CORRECTA CON 9 COLORES
 CLASS_COLORS = np.array([
-    [0.5, 0.5, 0.5],  # Clase 0 (Gris - Fondo)
-    [1.0, 0.0, 0.0],  # Clase 1 (Rojo - Vehículos)
-    [0.0, 0.0, 1.0],  # Clase 2 (Azul - Peatones)
+    [0.5, 0.5, 0.5],    # Clase 0 (Gris)
+    [1.0, 0.0, 0.0],    # Clase 1 (Rojo)
+    [0.0, 0.0, 1.0],    # Clase 2 (Azul)
+    [0.0, 1.0, 0.0],    # Clase 3 (Verde)
+    [1.0, 1.0, 0.0],    # Clase 4 (Amarillo)
+    [1.0, 0.0, 1.0],    # Clase 5 (Magenta)
+    [0.0, 1.0, 1.0],    # Clase 6 (Cian)
+    [1.0, 0.5, 0.0],    # Clase 7 (Naranja)
+    [0.5, 0.0, 1.0]     # Clase 8 (Púrpura)
 ])
 
 # --- Funciones de Inferencia ---

@@ -57,7 +57,7 @@ CLASS_COLORS = np.array([
 # --- Funciones de Inferencia ---
 
 ## INFERENCE: Carga el modelo PointNet++
-def load_inference_model(model_path, num_classes=3):
+def load_inference_model(model_path, num_classes=9):
     global inference_model, device
     print("Cargando modelo de inferencia...")
     try:

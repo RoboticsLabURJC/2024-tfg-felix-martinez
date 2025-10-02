@@ -14,6 +14,14 @@ import sys
 import math
 import pygame
 
+import os
+# Obtenemos la ruta absoluta de la carpeta que contiene este mismo archivo (carla_viz.py)
+current_dir = os.path.dirname(os.path.abspath(__file__))
+
+# Añadimos esa carpeta a la lista de rutas donde Python busca módulos
+if current_dir not in sys.path:
+    sys.path.append(current_dir)
+
 ## INFERENCE: Importaciones necesarias para PyTorch y el modelo
 import torch
 from pointnet2_model import PointNet2SemSeg

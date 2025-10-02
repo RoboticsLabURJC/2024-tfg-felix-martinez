@@ -215,13 +215,16 @@ def main(lidar_range, channels, points_per_second):
     world = client.get_world()
     
     ## INFERENCE: Cargar el modelo al inicio
+    # Asegúrate de que esta ruta sea correcta dentro de tu contenedor Docker si es necesario
     model_path = "/home/pc-felix-ubuntu/Repositories/2024-tfg-felix-martinez/segmentation/deep_learning/results/pointnet++_no_rem_v0/pointnet2_no_remission_v1.pth"
     load_inference_model(model_path)
 
+    original_settings = world.get_settings()
+    
     try:
         traffic_manager = client.get_trafficmanager(8000)
         traffic_manager.set_synchronous_mode(True)
-        original_settings = world.get_settings()
+        
         settings = world.get_settings()
         delta = 0.05
         settings.fixed_delta_seconds = delta
@@ -271,3 +274,30 @@ def main(lidar_range, channels, points_per_second):
 
         viz.register_key_callback(ord("V"), toggle_camera_view)
         viz.register_key_callback(ord("I"), toggle_inference_mode) ## INFERENCE: Registrar la tecla 'I'
+
+        frame, lidar_added = 0, False
+        while True:
+            world.tick()
+            vehicle_control(vehicle)
+            
+            if not lidar_added and len(point_cloud.points) > 0:
+                viz.add_geometry(point_cloud)
+                lidar_added = True
+
+            viz.update_geometry(point_cloud)
+            if not viz.poll_events():
+                break
+            viz.update_renderer()
+
+    except SystemExit:
+        print("Cerrando pygame y saliendo.")
+    
+    finally:
+        print("\nLimpiando...")
+        world.apply_settings(original_settings)
+        for actor in actor_list:
+            if actor and actor.is_alive:
+                actor.destroy()
+        actor_list.clear()
+        pygame.quit()
+        print("Limpieza completa.")

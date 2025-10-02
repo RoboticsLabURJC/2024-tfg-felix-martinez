@@ -216,7 +216,7 @@ def main(lidar_range, channels, points_per_second):
     
     ## INFERENCE: Cargar el modelo al inicio
     # Asegúrate de que esta ruta sea correcta dentro de tu contenedor Docker si es necesario
-    model_path = "/home/pc-felix-ubuntu/Repositories/2024-tfg-felix-martinez/segmentation/deep_learning/results/pointnet++_no_rem_v0/pointnet2_no_remission_v1.pth"
+    model_path = "/home/carla/2024-tfg-felix-martinez/segmentation/deep_learning/results/pointnet++_no_rem_v0/pointnet2_no_remission_v1.pth"
     load_inference_model(model_path)
 
     original_settings = world.get_settings()
